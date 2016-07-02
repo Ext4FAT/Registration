@@ -36,12 +36,14 @@
     <Import Project="config\PCL.props" />
     <Import Project="config\RealSense-x64.props" />
     <Import Project="config\OpenCV3.0-debug-x64.props" />
+    <Import Project="config\etc.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="config\PCL.props" />
     <Import Project="config\RealSense-x64.props" />
     <Import Project="config\OpenCV3.0-release-x64.props" />
+    <Import Project="config\etc.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
