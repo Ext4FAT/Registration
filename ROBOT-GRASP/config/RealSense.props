@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_PropertySheetDisplayName>SDK.VS2010-13.Integration.MT</_PropertySheetDisplayName>
+  </PropertyGroup>
+  <PropertyGroup>
+    <IncludePath>$(RSSDK_DIR)/Include;$(RSSDK_DIR)/Sample/Common/Include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup>
+    <LibraryPath>$(RSSDK_DIR)/lib/$(PlatformName);$(RSSDK_DIR)/sample/common/lib/$(PlatformName)/$(PlatformToolset);$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <Link Condition="'$(Configuration)'=='Debug'">
+      <AdditionalDependencies>libpxc_d.lib;libpxcutils_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Link Condition="'$(Configuration)'=='Release'">
+      <AdditionalDependencies>libpxc.lib;libpxcutils.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ClCompile Condition="'$(Configuration)'=='Debug'">
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ClCompile Condition="'$(Configuration)'=='Release'">
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>
