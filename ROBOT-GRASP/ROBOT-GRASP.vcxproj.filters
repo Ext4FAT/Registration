@@ -38,31 +38,31 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\MyDraw.hpp">
+    <ClInclude Include="include\Common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Segmentation.hpp">
+    <ClInclude Include="include\DrawWorld.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\DrawWorld.hpp">
+    <ClInclude Include="include\FileOperation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\FileOperation.hpp">
+    <ClInclude Include="include\Macro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Common.hpp">
+    <ClInclude Include="include\MyDraw.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Process.h">
+    <ClInclude Include="include\MyRealsense.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\PCL.hpp">
+    <ClInclude Include="include\Opencv.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Opencv.hpp">
+    <ClInclude Include="include\PCL.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\MyRealsense.hpp">
+    <ClInclude Include="include\Segmentation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
