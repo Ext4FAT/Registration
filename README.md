@@ -1,6 +1,6 @@
 ## Registration
 ### DEVELOPER
-![pic](./example/IDLER.png)
+![pic](./ROBOT-GRASP/example/IDLER.png)
 ## Example
 ![Example](./ROBOT-GRASP/example/Example.png)
 ![Point-Cloud](./ROBOT-GRASP/example/Point-Cloud.gif)
