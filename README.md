@@ -2,8 +2,8 @@
 ### DEVELOPER
 ![pic](./example/IDLER.png)
 ## Example
-![Example](./example/Example.png)
-![Point-Cloud](./example/Point-Cloud.gif)
+![Example](./ROBOT-GRASP/example/Example.png)
+![Point-Cloud](./ROBOT-GRASP/example/Point-Cloud.gif)
 
 
 ## ERROR & SOLUTION
