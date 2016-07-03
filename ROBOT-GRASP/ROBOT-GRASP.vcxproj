@@ -83,7 +83,6 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\PCL.cpp" />
     <ClCompile Include="src\Segmentation.cpp" />
-    <ClCompile Include="src\World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Common.hpp" />

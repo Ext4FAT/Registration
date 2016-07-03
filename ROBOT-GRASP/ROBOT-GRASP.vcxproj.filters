@@ -27,9 +27,6 @@
     <ClCompile Include="src\DrawWorld.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\World.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\PCL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

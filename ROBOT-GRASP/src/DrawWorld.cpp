@@ -2,27 +2,28 @@
 
 DrawWorld::DrawWorld(PXCSession* s, PXCSizeI32 user_size)
 {
-	session = s;
-	depthSize = user_size;
+	session_ = s;
+	depthSize_ = user_size;
+	light_ = { .5, .5, 1.0 };
 	init();
 }
 
 DrawWorld::~DrawWorld()
 {
-	session->Release();
-	drawVertices->Release();
-	vertices.clear();
+	session_->Release();
+	drawVertices_->Release();
+	vertices_.clear();
 }
 
 void DrawWorld::init()
 {
 	PXCImage::ImageInfo drawVerticesInfo;
 	memset(&drawVerticesInfo, 0, sizeof(drawVerticesInfo));
-	drawVerticesInfo.width = depthSize.width;
-	drawVerticesInfo.height = depthSize.height;
+	drawVerticesInfo.width = depthSize_.width;
+	drawVerticesInfo.height = depthSize_.height;
 	drawVerticesInfo.format = PXCImage::PIXEL_FORMAT_RGB32;
-	drawVertices = 0;
-	drawVertices = session->CreateImage(&drawVerticesInfo);
+	drawVertices_ = 0;
+	drawVertices_ = session_->CreateImage(&drawVerticesInfo);
 }
 
 
@@ -46,12 +47,12 @@ float DrawWorld::dot(PXCPoint3DF32 &v0, PXCPoint3DF32 &v1)
 
 
 
-PXCImage* DrawWorld::DepthToWorldByQueryVertices(vector<PXCPoint3DF32>& vertices, PXCImage *depth, PXCPoint3DF32 light)
+PXCImage* DrawWorld::DepthToWorldByQueryVertices(PXCImage *depth, vector<PXCPoint3DF32>& vertices)
 {
-	if (!drawVertices)	return 0;
-	PXCImage::ImageInfo drawVerticesInfo = drawVertices->QueryInfo();
+	if (!drawVertices_)	return 0;
+	PXCImage::ImageInfo drawVerticesInfo = drawVertices_->QueryInfo();
 	PXCImage::ImageData drawVerticesDat;
-	if (PXC_STATUS_NO_ERROR > drawVertices->AcquireAccess(PXCImage::ACCESS_WRITE, drawVerticesInfo.format, &drawVerticesDat))
+	if (PXC_STATUS_NO_ERROR > drawVertices_->AcquireAccess(PXCImage::ACCESS_WRITE, drawVerticesInfo.format, &drawVerticesDat))
 		return 0;
 
 	/* Retrieve vertices */
@@ -89,8 +90,8 @@ PXCImage* DrawWorld::DepthToWorldByQueryVertices(vector<PXCPoint3DF32>& vertices
 				vn1.z += vn2.z + vn3.z + vn4.z;
 				norm(vn1);
 				//
-				norm(light);
-				fLight = dot(vn1, light);
+				norm(light_);
+				fLight = dot(vn1, light_);
 			}
 
 			pdrawVerticesDat[4 * x] = pdrawVerticesDat[4 * x + 1] = pdrawVerticesDat[4 * x + 2] = pxcBYTE(abs(fLight) * 255);
@@ -99,15 +100,15 @@ PXCImage* DrawWorld::DepthToWorldByQueryVertices(vector<PXCPoint3DF32>& vertices
 		//换到下一个行
 		pdrawVerticesDat += drawVerticesDat.pitches[0];
 	}
-	drawVertices->ReleaseAccess(&drawVerticesDat);
-	return drawVertices;
+	drawVertices_->ReleaseAccess(&drawVerticesDat);
+	return drawVertices_;
 }
-PXCImage* DrawWorld::SegmentationWorld(vector<PXCPoint3DF32>& vertices, PXCImage *depth, PXCPoint3DF32 light, vector<cv::Point> seg)
+PXCImage* DrawWorld::SegmentationWorld(PXCImage *depth, vector<PXCPoint3DF32> &vertices, PointSet &seg)
 {
-	if (!drawVertices)	return 0;
-	PXCImage::ImageInfo drawVerticesInfo = drawVertices->QueryInfo();
+	if (!drawVertices_)	return 0;
+	PXCImage::ImageInfo drawVerticesInfo = drawVertices_->QueryInfo();
 	PXCImage::ImageData drawVerticesDat;
-	if (PXC_STATUS_NO_ERROR > drawVertices->AcquireAccess(PXCImage::ACCESS_WRITE, drawVerticesInfo.format, &drawVerticesDat))
+	if (PXC_STATUS_NO_ERROR > drawVertices_->AcquireAccess(PXCImage::ACCESS_WRITE, drawVerticesInfo.format, &drawVerticesDat))
 		return 0;
 	/* Retrieve vertices */
 	float brightness = 200.f;
@@ -140,11 +141,11 @@ PXCImage* DrawWorld::SegmentationWorld(vector<PXCPoint3DF32>& vertices, PXCImage
 			vn1.z += vn2.z + vn3.z + vn4.z;
 			norm(vn1);
 			//
-			norm(light);
-			fLight = dot(vn1, light);
+			norm(light_);
+			fLight = dot(vn1, light_);
 		}
 		pdrawVerticesDat[4 * x] = pdrawVerticesDat[4 * x + 1] = pdrawVerticesDat[4 * x + 2] = pxcBYTE(abs(fLight) * 255);
 	}
-	drawVertices->ReleaseAccess(&drawVerticesDat);
-	return drawVertices;
+	drawVertices_->ReleaseAccess(&drawVerticesDat);
+	return drawVertices_;
 }

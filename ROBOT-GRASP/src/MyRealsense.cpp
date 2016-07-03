@@ -373,7 +373,7 @@ int MyRealsense::captureDepthandSave()
 
 		pxcStatus sts = projection->QueryVertices(pxcdepth, &vertices[0]);
 		if (sts >= PXC_STATUS_NO_ERROR) {
-			PXCImage* drawVertices = dw.DepthToWorldByQueryVertices(vertices, pxcdepth, light);
+			PXCImage* drawVertices = dw.DepthToWorldByQueryVertices(pxcdepth, vertices);
 			if (drawVertices){
 				display = PXCImage2Mat(drawVertices);
 				//imshow("display", display);
@@ -422,7 +422,6 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 	pxcsm_->EnableStream(PXCCapture::STREAM_TYPE_COLOR, camera_.width, camera_.height, fps_);
 	pxcsm_->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, camera_.width, camera_.height, fps_);
 	//Configure Draw
-	PXCPoint3DF32 light = { .5, .5, 1.0 };
 	DrawWorld dw(pxcsession_, camera_);
 	//Configure Segmentation
 	unsigned topk = 5;
@@ -463,7 +462,7 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 		pxcStatus sts = projection_->QueryVertices(pxcdepth, &vertices[0]);
 		if (sts >= PXC_STATUS_NO_ERROR) {
 			//show
-			PXCImage* drawVertices = dw.DepthToWorldByQueryVertices(vertices, pxcdepth, light);
+			PXCImage* drawVertices = dw.DepthToWorldByQueryVertices(pxcdepth, vertices);
 			if (drawVertices){
 				display = PXCImage2Mat(drawVertices);
 				//imshow("display", display);
