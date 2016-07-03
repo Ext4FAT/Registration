@@ -3,7 +3,7 @@
 ![pic](./example/IDLER.png)
 ## Example
 ![pic](./example/Example.png)
-![pic](./example/Point-Cloud.png)
+![pic](./example/Point-Cloud.gif)
 
 
 ## ERROR & SOLUTION
