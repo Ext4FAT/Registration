@@ -61,8 +61,6 @@ PXCImage* DrawWorld::DepthToWorldByQueryVertices(PXCImage *depth, vector<PXCPoin
 	PXCImage::ImageInfo dinfo = depth->QueryInfo();
 	pxcBYTE* pdrawVerticesDat = drawVerticesDat.planes[0];
 
-
-
 	for (pxcI32 y = 1; y < dinfo.height - 1; y++) {
 		for (pxcI32 x = 1; x < dinfo.width - 1; x++) {
 			pdrawVerticesDat[4 * x] = pdrawVerticesDat[4 * x + 1] = pdrawVerticesDat[4 * x + 2] = 0;

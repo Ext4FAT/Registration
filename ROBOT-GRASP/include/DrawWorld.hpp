@@ -20,8 +20,20 @@ class DrawWorld{
 public:	
 	DrawWorld::DrawWorld(PXCSession* s, PXCSizeI32 user_size);
 	DrawWorld::~DrawWorld();
-
+	/**
+	*  @brief DepthToWorldByQueryVertices: reflect depth image to Point Cloud and show 
+	*  @param depth		input depth image
+	*  @param vertices	output generated Point Cloud by Realsense
+	*  @return			Point Cloud show image
+	*/
 	PXCImage* DepthToWorldByQueryVertices(PXCImage *depth, vector<PXCPoint3DF32> &vertices);
+	/**
+	*  @brief SegmentationWorld: reflect Segmentation to Point Cloud and show 
+	*  @param depth		input depth image
+	*  @param vertices	output generated Point Cloud by Realsense
+	*  @param seg		Segmentation Point Set
+	*  @return			Point Cloud show image
+	*/
 	PXCImage* SegmentationWorld(PXCImage *depth, vector<PXCPoint3DF32> &vertices, PointSet &seg);
 
 private:
