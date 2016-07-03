@@ -111,8 +111,8 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	//
 	pcl::visualization::PCLVisualizer viewer("RANSAC-ICP");
 	{
-		pcl::console::print_highlight("Add init position");
-	
+		pcl::ScopeTime t("Add init position");
+
 		viewer.addPointCloud(mesh, ColorHandlerNT(mesh, 255.0, 255.0, 255.0), "init_mesh");
 		viewer.addPointCloud(model, ColorHandlerNT(model, 255.0, 255.0, 255.0), "init_model");
 	}

@@ -50,7 +50,7 @@ vector<PXCPointF32> genRegistrationResult(PXCProjection *projection, PointCloudN
 	size_t sz = PXC2PCL(myseg.mainRegions_[0], vertices, mesh, 1.0 / scale);
 	cout << "Generate Point Cloud: " << sz << endl;
 	//Alignment
-	Matrix4f transformation = Registration(model, mesh, model_align, leaf, false);
+	Matrix4f transformation = Registration(model, mesh, model_align, leaf, true);
 	if (transformation == Matrix4f::Identity()) //Alignment failed 
 		return{};
 	vector<PXCPoint3DF32> result;
