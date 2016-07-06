@@ -21,7 +21,7 @@ public:
 	*  @param Dir					save color/depth data
 	*  @param width, height, fps    camera setting
 	*/
-	MyRealsense(std::string& Dir, int width, int height, float fps = 60);
+	MyRealsense(string& Dir, int width, int height, float fps = 60);
 	/**
 	*  @brief dataAcquire: Acquire color or depth data
 	*/
@@ -46,9 +46,9 @@ private:
 
 private:
 	//DataAcquire Setting
-	std::string dir_;
-	std::string depthDir_;
-	std::string rgbDir_;
+	string dir_;
+	string depthDir_;
+	string colorDir_;
 	//Realsense
 	PXCSession *pxcsession_ = 0;
 	PXCSenseManager *pxcsm_ = 0;

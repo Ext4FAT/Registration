@@ -35,7 +35,7 @@ using pcl::console::print_highlight;
 */
 bool  LoadModel(const string model_path, PointCloudT::Ptr &model) //XYZ
 {
-	pcl::console::print_highlight("Loading point clouds...\n");
+	pcl::ScopeTime t("[Load point clouds]");
 	if (pcl::io::loadPCDFile<PointT>(model_path, *model) < 0) {
 		pcl::console::print_error("Error loading model file!\n");
 		return false;
@@ -44,7 +44,7 @@ bool  LoadModel(const string model_path, PointCloudT::Ptr &model) //XYZ
 }
 bool  LoadModel(const string model_path, PointCloudNT::Ptr &model) //Normal
 {
-	pcl::console::print_highlight("Loading point clouds...\n");
+	pcl::ScopeTime t("[Load point clouds]");
 	if (pcl::io::loadPCDFile<PointNT>(model_path, *model) < 0) {
 		pcl::console::print_error("Error loading model file!\n");
 		return false;
@@ -111,14 +111,14 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	//
 	pcl::visualization::PCLVisualizer viewer("RANSAC-ICP");
 	{
-		pcl::ScopeTime t("Add init position");
+		pcl::ScopeTime t("[Add init position]");
 
 		viewer.addPointCloud(mesh, ColorHandlerNT(mesh, 255.0, 255.0, 255.0), "init_mesh");
 		viewer.addPointCloud(model, ColorHandlerNT(model, 255.0, 255.0, 255.0), "init_model");
 	}
 
 	{
-		pcl::ScopeTime t("Downsample");
+		pcl::ScopeTime t("[Downsample]");
 
 		pcl::VoxelGrid <PointNT> grid;
 		grid.setLeafSize(leaf, leaf, leaf);
@@ -128,7 +128,7 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 		grid.filter(*mesh);
 	}
 	{
-		pcl::ScopeTime t(" Estimate normals for mesh");
+		pcl::ScopeTime t("[Estimate normals for mesh]");
 
 		pcl::NormalEstimationOMP <PointNT, PointNT> nest;
 		nest.setRadiusSearch(leaf);
@@ -138,7 +138,7 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 		//nest.compute(*model);
 	}
 	{
-		pcl::ScopeTime t("Estimate features");
+		pcl::ScopeTime t("[Estimate features]");
 		FeatureEstimationT fest;
 		fest.setRadiusSearch(5 * leaf);
 		fest.setInputCloud(model);
@@ -160,19 +160,18 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	ransac.setSimilarityThreshold(0.9f); // Polygonal edge length similarity threshold
 	ransac.setMaxCorrespondenceDistance(2.5f * leaf); // Inlier threshold
 	ransac.setInlierFraction(0.25f); // Required inlier fraction for accepting a pose hypothesis
-	pcl::console::print_highlight("Starting alignment...\n");
 	{
-		pcl::ScopeTime t("RANSAC");
+		pcl::ScopeTime t("[RANSAC]");
 		ransac.align(*model_align);
 	}
 	transformation_ransac = ransac.getFinalTransformation();
-	print4x4Matrix(transformation_ransac);
-	//If RANSAC success, then ICP
 	if (!ransac.hasConverged()) {
 		pcl::console::print_error("RANSAC alignment failed!\n");
 		viewer.close();
 		return transformation_ransac;
 	}
+	print4x4Matrix(transformation_ransac);
+	//If RANSAC success, then ICP
 	//ICP
 	int iterations = 100;
 	double EuclideanEpsilon = 2e-8;
@@ -186,7 +185,7 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	icp.setMaximumIterations(MaximumIterations);
 	icp.setTransformationEpsilon(EuclideanEpsilon);
 	{
-		pcl::ScopeTime t("ICP");
+		pcl::ScopeTime t("[ICP]");
 		icp.align(*mesh);
 	}
 	transformation_icp = icp.getFinalTransformation();

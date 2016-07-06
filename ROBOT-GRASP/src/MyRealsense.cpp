@@ -75,11 +75,11 @@ void showRegistrationResult(vector<PXCPointF32> &show2d, Mat &color)
 }
 
 //目录结尾都带反斜杠 
-MyRealsense::MyRealsense(std::string& Dir, int width, int height, float fps) 
+MyRealsense::MyRealsense(string& Dir, int width, int height, float fps) 
 {
 	dir_ = Dir;
 	depthDir_ = Dir + "\\depth\\";
-	rgbDir_ = Dir + "\\rgb\\";
+	colorDir_ = Dir + "\\rgb\\";
 	camera_.width = width;
 	camera_.height = height;
 	fps_ = fps;
@@ -145,7 +145,7 @@ int MyRealsense::dataAcquire()
 	////Detect dir exist, if not, create
 	//DIR_NOEXIST_AND_CREATE(dir_);
 	//DIR_NOEXIST_AND_CREATE(depthDir_);
-	//DIR_NOEXIST_AND_CREATE(rgbDir_);
+	//DIR_NOEXIST_AND_CREATE(colorDir_);
 
 	//Define variable
 	Mat color, depth, display;
@@ -295,7 +295,7 @@ int MyRealsense::dataAcquire()
 
 			////Construct the filename to save
 			//time_t slot = time(0);
-			//std::string cpath = getSavePath(rgbDir_, slot, framecnt);
+			//std::string cpath = getSavePath(colorDir_, slot, framecnt);
 			//std::string dpath = getSavePath(depthDir_, slot, framecnt);
 
 			////Save image
@@ -426,7 +426,7 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 	//Configure Segmentation
 	unsigned topk = 5;
 	short threshold = 3;
-	Segmentation myseg(320, 240, topk, threshold);
+	Segmentation myseg(camera_.width / 2, camera_.height / 2, topk, threshold);
 	//placeWindows(topk);
 	placeWindows(1);
 	
@@ -443,9 +443,6 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 		return -1;
 	}
 	//Load3dModel
-
-	//std::string model_path = "C:\\Users\\win10\\Desktop\\Realsense-PCL\\ROBOT\\model\\teacup.pcd";
-	//std::string grasp_path = "C:\\Users\\win10\\Desktop\\Realsense-PCL\\ROBOT\\model\\grasp.obj";
 	const float leaf = 0.01f;
 	PointCloudNT::Ptr model(new PointCloudNT);
 	LoadModel(model_path, model);

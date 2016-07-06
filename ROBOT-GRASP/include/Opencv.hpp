@@ -28,5 +28,5 @@ using cv::rectangle;
 /* Typedef                                                              */
 /************************************************************************/
 typedef std::vector<cv::Point> PointSet;
-typedef std::vector< std::vector<cv::Point> > SegmentSet;
-
+typedef std::vector<PointSet> SegmentSet;
+//typedef std::vector<PointSet> ConvexHullSet;
