@@ -88,6 +88,7 @@
     <ClInclude Include="include\Common.hpp" />
     <ClInclude Include="include\DrawWorld.hpp" />
     <ClInclude Include="include\FileOperation.hpp" />
+    <ClInclude Include="include\HOG-SVM.hpp" />
     <ClInclude Include="include\Macro.h" />
     <ClInclude Include="include\MyDraw.hpp" />
     <ClInclude Include="include\MyRealsense.hpp" />

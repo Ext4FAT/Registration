@@ -71,7 +71,6 @@ imshow("segmentation", disp);
 
 void Segmentation::Segment(Mat& depth, Mat& color)
 {
-	Mat disp = Mat::zeros(depth.size(), CV_8UC3);
 	Mat visit = Mat::zeros(depth.size(), CV_8U);
 	//Region Growing
 	for (int i = 0; i < RANGE_.width; i++)
@@ -88,27 +87,27 @@ void Segmentation::Segment(Mat& depth, Mat& color)
 					mainRegions_.push_back(pSet);
 			}
 		}
-	//Vec3b xxx(255, 255, 255);
-	//drawBlack(blackRegions, disp, xxx);
-	//drawSobel(depth);
 	sort(mainRegions_.begin(), mainRegions_.end(),
 		[](const vector<Point>& v1, const vector<Point>& v2){return v1.size() > v2.size(); });
+	//show segmentation before and after
 	Mat pre = Mat::zeros(depth.size(), CV_8UC3);
 	draw(mainRegions_, pre, colors_);
 	imshow("before merging", pre);
+
 	regionMerge(depth, mainRegions_, blackRegions_, topk_, 1);
-
+	
+	Mat disp = Mat::zeros(depth.size(), CV_8UC3);
 	draw(mainRegions_, disp, colors_);
-	//drawRegions(mainRegions_, color, depth, disp);
-	drawBoundBox(mainRegions_, distance_, color, depth);
-
 	imshow("segmentation", disp);
+	
+	//show boundbox
+	Mat regions = color.clone();
+	calculateConvexHulls();
+	calculateBoundBoxex();
+	for (auto rect : boundBoxes_) 
+		rectangle(regions, rect, Scalar(255, 255, 255), 2);
+	imshow("regions", regions);
 }
-
-
-
-
-
 
 void Segmentation::DFS(Mat &depth, Mat &visit, Point cur, short &threshold, vector<Point> &v)
 {
@@ -206,7 +205,7 @@ void Segmentation::regionMerge(Mat& depth, SegmentSet& segment, SegmentSet& blac
 inline Rect Segmentation::hullBoundBox(PointSet& hull)
 {
 	static Point extend(5, 5);
-	Point pmax(0, 0), pmin(1000, 1000);
+	Point pmax(0, 0), pmin(0x7fffffff, 0x7fffffff);
 	for (auto p : hull) {
 		if (p.x > pmax.x) pmax.x = p.x;
 		if (p.x < pmin.x) pmin.x = p.x;
@@ -216,6 +215,19 @@ inline Rect Segmentation::hullBoundBox(PointSet& hull)
 	return Rect(pmin - extend, pmax + extend) & RANGE_;
 }
 
+inline void Segmentation::calculateConvexHulls()
+{
+	for (auto &seg : mainRegions_) {
+		convexHulls_.push_back(PointSet());
+		convexHull(seg, convexHulls_.back(), false);
+	}
+}
+
+inline void Segmentation::calculateBoundBoxex()
+{
+	for (auto &hull : convexHulls_) 
+		boundBoxes_.push_back(hullBoundBox(hull));
+}
 
 inline bool Segmentation::isRegionInsideHull(PointSet& pSet, PointSet& hull, double minSim)
 {
@@ -254,6 +266,8 @@ void Segmentation::clear()
 	this->mainRegions_.clear();
 	this->blackRegions_.clear();
 	this->distance_.clear();
+	this->convexHulls_.clear();
+	this->boundBoxes_.clear();
 }
 
 void Segmentation::draw(SegmentSet &segment, Mat &disp, vector<Vec3b> &colors)
@@ -381,28 +395,11 @@ void Segmentation::drawBoundBox(SegmentSet &segment, vector<double> &distance, M
 
 	for (auto seg : segment) {
 		vector<Point> hull;
-		cv::convexHull(seg, hull, false);
+		convexHull(seg, hull, false);
 		//RotatedRect rr = cv::minAreaRect(hull);
-		Rect boundbox = Segmentation::hullBoundBox(seg);
-		Point center = (boundbox.tl() + boundbox.br()) / 2;
+		Rect boundbox = Segmentation::hullBoundBox(hull);
 		rectangle(color, boundbox, Scalar(255, 255, 255), 2);
-		//rectangle(depth, boundbox, Scalar(30000), 2);
-		//cv::putText(color, to_string((int)distance[count]), center, 0, 0.5, Scalar(0, 0, 255), 2);
-		//cv::putText(depth, to_string((int)distance[count]), center, 0, 0.5, Scalar(30000), 2);
-
-		if (count == 0){
-			rectangle(classification, boundbox, Scalar(0, 0, 255), 2);
-			cv::putText(classification, categoryName, center, 0, 0.5, Scalar(0, 0, 255), 2);
-		}
 		count++;
-		//imshow("a" + to_string(count), color(boundbox));
-
-		/*
-		std::vector<cv::Point>::const_iterator it;
-		for (it = hull.begin() + 1; it != hull.end(); it++)
-		line(color, *(it-1), *it, Scalar(120, 120, 120), 2);
-		line(color, hull[0], hull.back(), Scalar(120, 120, 120), 2);
-		*/
 	}
 	imshow("regions", color);
 	imshow("classification", classification);

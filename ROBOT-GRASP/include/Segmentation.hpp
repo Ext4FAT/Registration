@@ -22,11 +22,12 @@ public:
 	void clear();
 private:
 	void regionMerge(Mat& depth, SegmentSet& segment, SegmentSet& blackRegions, unsigned topk, double minSim);
+	inline void calculateConvexHulls();
+	inline void calculateBoundBoxex();
+	inline Rect hullBoundBox(PointSet& hull);
 
-	Rect hullBoundBox(PointSet& hull);
-
-	bool isRegionInsideHull(PointSet& pSet, PointSet& hull, double minSim);
-	bool isRegionInsideHull(PointSet& pSet, PointSet& hull, PointSet& seg, double minSim);
+	inline bool isRegionInsideHull(PointSet& pSet, PointSet& hull, double minSim);
+	inline bool isRegionInsideHull(PointSet& pSet, PointSet& hull, PointSet& seg, double minSim);
 
 	void randColor();
 
@@ -46,6 +47,8 @@ private:
 public:
 	SegmentSet mainRegions_;
 	SegmentSet blackRegions_;
+	vector<PointSet> convexHulls_;
+	vector<Rect> boundBoxes_;
 	vector<double> distance_;
 
 private:
