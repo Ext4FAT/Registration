@@ -2,10 +2,10 @@
 #include <stack>
 using std::stack;
 
-const vector<Point> Segmentation::_DIRECTIONS_ = { Point(1, 0), Point(0, -1),
-Point(-1, 0), Point(0, 1),
-Point(1, 1), Point(-1, 1),
-Point(1, -1), Point(-1, -1) };
+const vector<Point> Segmentation::_DIRECTIONS_ = {	Point(1, 0), Point(0, -1),
+													Point(-1, 0), Point(0, 1),
+													Point(1, 1), Point(-1, 1),
+													Point(1, -1), Point(-1, -1) };
 const vector<Point> Segmentation::_DIR_ = { Point(1, 0), Point(0, 1), Point(1, 1) };
 
 
@@ -28,46 +28,6 @@ Segmentation::Segmentation(Size sz, unsigned k, short t)
 	//Generate random colors
 	this->randColor();
 }
-
-/*
-void Segmentation::Segment(Mat& depth, Mat& color)
-{
-Mat disp = Mat::zeros(depth.size(), CV_8UC3);
-Mat visit = Mat::zeros(depth.size(), CV_8U);
-//Region Growing
-for (int i = 0; i < RANGE_.width; i++)
-for (int j = 0; j < RANGE_.height; j++) {
-Point current(i, j);
-short value = depth.at<short>(current);
-if (!visit.at<char>(current)) {
-PointSet v;
-v.push_back(current);
-visit.at<char>(current) = 255;
-DFS(depth, visit, current, threshold_, v);
-//insert segment
-if (!value)
-blackRegions_.push_back(v);
-else
-mainRegions_.push_back(v);
-}
-}
-//Vec3b xxx(255, 255, 255);
-//drawBlack(blackRegions, disp, xxx);
-//drawSobel(depth);
-sort( mainRegions_.begin(), mainRegions_.end(),
-[](const vector<Point>& v1, const vector<Point>& v2){return v1.size() > v2.size();} );
-Mat pre = Mat::zeros(depth.size(), CV_8UC3);
-draw(mainRegions_, pre, colors_);
-imshow("before merging", pre);
-regionMerge(depth, mainRegions_, blackRegions_, topk_, 1);
-
-draw(mainRegions_, disp, colors_);
-//drawRegions(mainRegions_, color, depth, disp);
-drawBoundBox(mainRegions_, distance_, color, depth);
-
-imshow("segmentation", disp);
-}
-*/
 
 void Segmentation::Segment(Mat& depth, Mat& color)
 {
