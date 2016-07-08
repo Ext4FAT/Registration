@@ -9,8 +9,10 @@
 #include <sstream>
 #include <queue>
 #include <set>
+#include <map>
 
 
+using std::map;
 using std::vector;
 using std::string;
 using std::ofstream;

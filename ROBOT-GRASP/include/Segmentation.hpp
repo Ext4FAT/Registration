@@ -89,13 +89,13 @@ private:
 	virtual void drawSobel(Mat& depth);
 
 public:
-	/* segmentation info */
+	// segmentation info 
 	SegmentSet mainRegions_; // topk merged main regions
 	SegmentSet blackRegions_; // unreliable point region
 	vector<PointSet> convexHulls_; // convex hulls_ of mainRegions_
 	vector<Rect> boundBoxes_; // bound boxes of mainRegions_
 	vector<double> distance_; // the average distance of mainRegions_
-	/* parameters */
+	// parameters
 	static const vector<Point> _DIRECTIONS_;  // eight directions to extend point
 	static const vector<Point> _DIR_; // three directions (right, down, right-down) to complete point
 	vector<Vec3b> colors_; // random color to mark segmentation

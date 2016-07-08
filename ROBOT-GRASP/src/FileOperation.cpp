@@ -8,7 +8,7 @@ std::vector<std::string> FileOperation::getCurdirFilePath(std::string dirPath)
 	struct _finddata_t fileinfo;
 	std::string p;
 	std::vector<std::string> files;
-	if ((hFile = _findfirst(p.assign(dirPath).append("\\*").c_str(), &fileinfo)) != -1) {
+	if ((hFile = (long)_findfirst(p.assign(dirPath).append("\\*").c_str(), &fileinfo)) != -1) {
 		do {
 			if (!(fileinfo.attrib & _A_SUBDIR))
 				files.push_back(p.assign(dirPath).append("\\").append(fileinfo.name));
@@ -26,7 +26,7 @@ std::vector<std::string> FileOperation::getCurdirFileName(std::string dirPath)
 	struct _finddata_t fileinfo;
 	std::string p;
 	std::vector<std::string> files;
-	if ((hFile = _findfirst(p.assign(dirPath).append("\\*").c_str(), &fileinfo)) != -1) {
+	if ((hFile = (long)_findfirst(p.assign(dirPath).append("\\*").c_str(), &fileinfo)) != -1) {
 		do {
 			if (!(fileinfo.attrib & _A_SUBDIR))
 				files.push_back(fileinfo.name);

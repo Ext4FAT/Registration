@@ -75,6 +75,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\HOG-SVM.cpp" />
     <ClCompile Include="src\MyRealsense.cpp" />
     <ClCompile Include="src\DrawWorld.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

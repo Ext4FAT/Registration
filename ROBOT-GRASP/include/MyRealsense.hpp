@@ -18,7 +18,7 @@ class MyRealsense: public FileOperation
 public:
 	/**
 	*  @brief testRegistration: End-TO-End Test RANSAC+ICP
-	*  @param Dir					save color/depth data
+	*  @param Dir					save color/depth data, for example: ".\\xxx\\"
 	*  @param width, height, fps    camera setting
 	*/
 	MyRealsense(string& Dir, int width, int height, float fps = 60);
@@ -45,11 +45,11 @@ private:
 	int outputPCD(const string filename, PointSet &pSet, vector<PXCPoint3DF32> &vertices);
 
 private:
-	//DataAcquire Setting
+	// DataAcquire Setting
 	string dir_;
 	string depthDir_;
 	string colorDir_;
-	//Realsense
+	// Realsense
 	PXCSession *pxcsession_ = 0;
 	PXCSenseManager *pxcsm_ = 0;
 	PXCCapture::Device *pxcdev_ = 0;
