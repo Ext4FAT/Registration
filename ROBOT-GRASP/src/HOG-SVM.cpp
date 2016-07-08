@@ -1,6 +1,6 @@
 
 #include "HOG-SVM.hpp"
-#include "Macro.hpp"
+#include "Macro.h"
 
 HOG_SVM::HOG_SVM()
 {
