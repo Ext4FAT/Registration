@@ -36,10 +36,10 @@ void placeWindows(int topk)
 	cv::moveWindow("classification", 350, 300);
 	cv::moveWindow("regions", 0, 300);
 	cv::moveWindow("reflect", 1600, 0);
-	for (int k = 0; k < topk; k++) {
-		cv::namedWindow(to_string(k));
-		cv::moveWindow(to_string(k), (k + 2) * 350, 300);
-	}
+	//for (int k = 0; k < topk; k++) {
+	//	cv::namedWindow(to_string(k));
+	//	cv::moveWindow(to_string(k), (k) * 350, 600);
+	//}
 }
 
 vector<PXCPointF32> genRegistrationResult(PXCProjection *projection, PointCloudNT::Ptr &model, Segmentation &myseg, vector<PXCPoint3DF32> &vertices, double scale, float leaf)
@@ -476,7 +476,6 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 		imshow("color", color2);
 		imshow("depth", 65536 / 1200 * depth2);
 
-		Mat show = color2.clone();
 		myseg.completeDepth(depth);
 		myseg.Segment(depth2, color2);
 		resize(display, display, Size(320, 240));
@@ -486,10 +485,11 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 				//label rectangle
 				rectangle(color2, myseg.boundBoxes_[k], Scalar(0, 0, 255), 2);
 				imshow("classification", color2);
-				//show point cloud
-				for (auto p : myseg.mainRegions_[k])
-					show.at<Vec3b>(p) = display.at<Vec3b>(p);
-				imshow(to_string(k), show);
+				////show point cloud
+				//Mat show = color2.clone();
+				//for (auto p : myseg.mainRegions_[k])
+				//	show.at<Vec3b>(p) = display.at<Vec3b>(p);
+				//imshow(to_string(k), show);
 				//show registration
 				if (waitKey(1) == ' ') {
 					cout << "[" << framecnt << "]" << endl;
