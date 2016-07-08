@@ -483,6 +483,9 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 		//show segment Point Cloud
 		for (int k = 0; k < topk; k++){
 			if (1 == hog_svm.predict(color2(myseg.boundBoxes_[k]))) {
+				//label rectangle
+				rectangle(color2, myseg.boundBoxes_[k], Scalar(0, 0, 255), 2);
+				imshow("classification", color2);
 				//show point cloud
 				for (auto p : myseg.mainRegions_[k])
 					show.at<Vec3b>(p) = display.at<Vec3b>(p);
