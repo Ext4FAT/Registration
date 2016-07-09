@@ -24,6 +24,7 @@ public:
 	MyRealsense(string& Dir, int width, int height, float fps = 60);
 	/**
 	*  @brief dataAcquire: Acquire color or depth data
+	*  @return	0: success; -1: pxcdevice error; -2: pxcproject cann't create 
 	*/
 	int dataAcquire();
 	/**

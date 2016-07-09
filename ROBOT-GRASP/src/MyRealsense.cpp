@@ -411,6 +411,7 @@ int MyRealsense::show(){}
 int MyRealsense::testRegistration(const string model_path, double PointCloudScale)
 {
 	//Define variable
+	Size showSize = { camera_.width / 2, camera_.height / 2 }; //segement and show size is the half of camera
 	Mat color, depth, display;
 	vector<PXCPoint3DF32> vertices(camera_.height*camera_.width);
 	PXCCapture::Sample *sample;
@@ -424,15 +425,16 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 	//Configure Segmentation
 	unsigned topk = 5;
 	short threshold = 3;
-	Segmentation myseg(camera_.width / 2, camera_.height / 2, topk, threshold);
+	Segmentation myseg(showSize.width / 2, showSize.height / 2, topk, threshold);
 	//Configure HOG-SVM
 	HOG_SVM hog_svm(".\\classification\\HOG-SVM-MODEL.xml");
-	
 	//Configure RealSense
 	pxcsession_ = PXCSession::CreateInstance();
 	pxcsm_ = pxcsession_->CreateSenseManager();
 	pxcsm_->EnableStream(PXCCapture::STREAM_TYPE_COLOR, camera_.width, camera_.height, fps_);
 	pxcsm_->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, camera_.width, camera_.height, fps_);
+	//Configure Draw Point Cloud
+	DrawWorld dw(pxcsession_, camera_);
 	//Query Information
 	pxcsm_->Init();
 	pxcdev_ = pxcsm_->QueryCaptureManager()->QueryDevice();
@@ -443,10 +445,8 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 	projection_ = pxcdev_->CreateProjection();
 	if (!projection_) {
 		MESSAGE_COUT("ERROR", "Failed to create an SDK Projection");
-		return -1;
+		return -2;
 	}
-	//Configure Draw
-	DrawWorld dw(pxcsession_, camera_);
 	//Detect each video frame
 	placeWindows(topk);
 	for (framecnt = 1; (1); framecnt++) {
@@ -471,15 +471,13 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 		color = PXCImage2Mat(pxccolor);
 		if (!depth.cols || !color.cols)	continue;
 		Mat depth2, color2;
-		resize(depth, depth2, Size(320, 240));
-		resize(color, color2, Size(320, 240));
+		resize(depth, depth2, showSize);
+		resize(color, color2, showSize);
 		imshow("color", color2);
 		imshow("depth", 65536 / 1200 * depth2);
-
-		myseg.completeDepth(depth);
-		myseg.Segment(depth2, color2);
-		resize(display, display, Size(320, 240));
+		resize(display, display, showSize);
 		//show segment Point Cloud
+		myseg.Segment(depth2, color2);
 		for (int k = 0; k < topk; k++){
 			if (1 == hog_svm.predict(color2(myseg.boundBoxes_[k]))) {
 				//label rectangle
