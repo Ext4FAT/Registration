@@ -1,6 +1,6 @@
 # Registration
 
-## DEVELOPER
+## Developer
 ![pic](./ROBOT-GRASP/example/IDLER.png)
 
 ## Introduction
