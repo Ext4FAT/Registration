@@ -12,7 +12,9 @@
 #include <pxcsensemanager.h>
 #include <pxcprojection.h>
 
-
+/*******************************************************************************
+*   Realsense Operation.													   *
+*******************************************************************************/
 class MyRealsense: public FileOperation
 {
 public:
