@@ -26,6 +26,11 @@ bool  LoadModel(const string model_path, PointCloudT::Ptr &model); //XYZ
 bool  LoadModel(const string model_path, PointCloudNT::Ptr &model); //Normal
 
 /************************************************************************/
+/* Load grasping region point cloud                                     */
+/************************************************************************/
+int loadGrasp(const string model_path, PointCloudT::Ptr &grasp);
+
+/************************************************************************/
 /* Downsample model point cloud                                         */
 /************************************************************************/
 void Downsample(PointCloudNT::Ptr &model, float leaf);
@@ -56,7 +61,6 @@ Matrix4f Registration(	PointCloudNT::Ptr &model,
 						PointCloudNT::Ptr &model_align,
 						float leaf = 0.01f,
 						bool showGraphic = true	);
-
 
 
 

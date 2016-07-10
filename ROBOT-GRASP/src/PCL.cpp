@@ -53,6 +53,15 @@ bool  LoadModel(const string model_path, PointCloudNT::Ptr &model) //Normal
 }
 
 /************************************************************************/
+/* Load grasping region point cloud                                     */
+/************************************************************************/
+int loadGrasp(const string model_path, PointCloudT::Ptr &grasp)
+{
+	//TODO
+	return 0;
+}
+
+/************************************************************************/
 /* Output Transformation Matrix                                         */
 /************************************************************************/
 void print4x4Matrix(const Matrix4f & matrix)
