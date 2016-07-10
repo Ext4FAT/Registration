@@ -10,26 +10,19 @@
 #include <pcl/registration/icp.h>
 #include <pcl/registration/sample_consensus_prerejective.h>
 #include <pcl/visualization/pcl_visualizer.h>
+
 // Types
 typedef pcl::FPFHSignature33 FeatureT;
 typedef pcl::FPFHEstimationOMP<PointNT, PointNT, FeatureT> FeatureEstimationT;
 typedef pcl::PointCloud<FeatureT> FeatureCloudT;
 typedef pcl::visualization::PointCloudColorHandlerCustom<PointNT> ColorHandlerNT;
-//output
-using pcl::console::print_info;
-using pcl::console::print_warn;
-using pcl::console::print_error;
-using pcl::console::print_value;
-using pcl::console::print_debug;
-using pcl::console::print_highlight;
-
 
 
 /************************************************************************/
 /* Load model or mesh                                                  */
 /************************************************************************/
 /**
-*  @brief LoadModel: load .pcd file to program, either model or mesh 
+*  @brief LoadModel: load .pcd file to program, either model or mesh
 *  @param model_path   .pcd filepath
 *  @param model        load PointCloudT/PointCloudNT to memory
 */

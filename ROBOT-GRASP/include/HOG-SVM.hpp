@@ -1,7 +1,7 @@
 #include "FileOperation.hpp"
 #include "Opencv.hpp"
 /************************************************************************/
-/* namespace cv and cv::ml                                                         */
+/* namespace cv and cv::ml                                              */
 /************************************************************************/
 using cv::HOGDescriptor;
 using cv::Algorithm;

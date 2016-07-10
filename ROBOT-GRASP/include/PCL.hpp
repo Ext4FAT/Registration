@@ -20,8 +20,23 @@ typedef pcl::PointXYZ PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 
 /************************************************************************/
+/* Output                                                               */
+/************************************************************************/
+using pcl::console::print_info;
+using pcl::console::print_warn;
+using pcl::console::print_error;
+using pcl::console::print_value;
+using pcl::console::print_debug;
+using pcl::console::print_highlight;
+
+/************************************************************************/
 /* Load model and mesh                                                  */
 /************************************************************************/
+/**
+*  @brief LoadModel: load .pcd file to program, either model or mesh
+*  @param model_path   .pcd filepath
+*  @param model        load PointCloudT/PointCloudNT to memory
+*/
 bool  LoadModel(const string model_path, PointCloudT::Ptr &model); //XYZ
 bool  LoadModel(const string model_path, PointCloudNT::Ptr &model); //Normal
 
@@ -38,7 +53,7 @@ void Downsample(PointCloudNT::Ptr &model, float leaf);
 /************************************************************************/
 /* Estimate FPFH features                                               */
 /************************************************************************/
-//void EstimateFPFH(PointCloudNT::Ptr &model, FeatureCloudT::Ptr &model_features, float leaf);
+void EstimateFPFH(PointCloudNT::Ptr &model, FeatureCloudT::Ptr &model_features, float leaf);
 
 /************************************************************************/
 /* Output Transformation Matrix                                         */

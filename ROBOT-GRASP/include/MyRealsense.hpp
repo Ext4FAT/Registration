@@ -30,6 +30,11 @@ public:
 	*/
 	int dataAcquire();
 	/**
+	*  @brief configRealsense: configure Realsense and get ready for starting
+	*  @return	0: success; -1: pxcdevice error; -2: pxcproject cann't create
+	*/
+	int configRealsense();
+	/**
 	*  @brief show: demo with realtime capture video stream
 	*/
 	int show();

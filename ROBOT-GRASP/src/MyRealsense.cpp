@@ -131,7 +131,7 @@ int MyRealsense::outputPCD(const string filename, PointSet &pSet, vector<PXCPoin
 	return 1;
 }
 
-inline std::string MyRealsense::getSavePath(std::string dir,time_t slot, long framecnt)
+inline string MyRealsense::getSavePath(std::string dir,time_t slot, long framecnt)
 {
 	std::stringstream ss;
 	std::string filename;
@@ -139,6 +139,29 @@ inline std::string MyRealsense::getSavePath(std::string dir,time_t slot, long fr
 	ss >> filename;
 	return filename;
 }
+
+int MyRealsense::configRealsense()
+{
+	//Configure RealSense
+	pxcsession_ = PXCSession::CreateInstance();
+	pxcsm_ = pxcsession_->CreateSenseManager();
+	pxcsm_->EnableStream(PXCCapture::STREAM_TYPE_COLOR, camera_.width, camera_.height, fps_);
+	pxcsm_->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, camera_.width, camera_.height, fps_);
+	//Query Information
+	pxcsm_->Init();
+	pxcdev_ = pxcsm_->QueryCaptureManager()->QueryDevice();
+	if (!pxcdev_) {
+		MESSAGE_COUT("ERROR", "Failed to create an SDK SenseManager");
+		return -1;
+	}
+	projection_ = pxcdev_->CreateProjection();
+	if (!projection_) {
+		MESSAGE_COUT("ERROR", "Failed to create an SDK Projection");
+		return -2;
+	}
+	return 0;
+}
+
 
 int MyRealsense::dataAcquire()
 {
@@ -429,24 +452,9 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 	//Configure HOG-SVM
 	HOG_SVM hog_svm(".\\classification\\HOG-SVM-MODEL.xml");
 	//Configure RealSense
-	pxcsession_ = PXCSession::CreateInstance();
-	pxcsm_ = pxcsession_->CreateSenseManager();
-	pxcsm_->EnableStream(PXCCapture::STREAM_TYPE_COLOR, camera_.width, camera_.height, fps_);
-	pxcsm_->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, camera_.width, camera_.height, fps_);
+	configRealsense();
 	//Configure Draw Point Cloud
 	DrawWorld dw(pxcsession_, camera_);
-	//Query Information
-	pxcsm_->Init();
-	pxcdev_ = pxcsm_->QueryCaptureManager()->QueryDevice();
-	if (!pxcdev_) {
-		MESSAGE_COUT("ERROR", "Failed to create an SDK SenseManager");
-		return -1;
-	}
-	projection_ = pxcdev_->CreateProjection();
-	if (!projection_) {
-		MESSAGE_COUT("ERROR", "Failed to create an SDK Projection");
-		return -2;
-	}
 	//Detect each video frame
 	placeWindows(topk);
 	for (framecnt = 1; (1); framecnt++) {
@@ -458,8 +466,7 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 		pxcdepth = projection_->CreateDepthImageMappedToColor(pxcdepth, pxccolor);
 		//Generate Point Cloud
 		pxcStatus sts = projection_->QueryVertices(pxcdepth, &vertices[0]);
-		if (sts >= PXC_STATUS_NO_ERROR) {
-			//show
+		if (sts >= PXC_STATUS_NO_ERROR) { // Show Point Cloud
 			PXCImage* drawVertices = dw.DepthToWorldByQueryVertices(pxcdepth, vertices);
 			if (drawVertices){
 				display = PXCImage2Mat(drawVertices);
