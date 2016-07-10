@@ -25,7 +25,7 @@ Reflect points into 2d image.
 
 ## Example
 ### Interpretion
-*color* and *depth* are soure data captured by Realsense. 
+*color* and *depth* are soure data captured by Realsense. *before merging* is raw result with region-growing and *segmentation* merge small regions into representive regions as main regions. *regions* show the bounding boxes with convex hulls of main regions. And *classification* show region which probably contains object. The 3D Point Cloud window show the registration and *reflect* demonstrate the final result. 
 ### Result
 ![Example](./ROBOT-GRASP/example/Example.png)
 ![Point-Cloud](./ROBOT-GRASP/example/Point-Cloud.gif)
