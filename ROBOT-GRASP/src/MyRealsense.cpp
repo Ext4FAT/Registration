@@ -425,7 +425,7 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 	//Configure Segmentation
 	unsigned topk = 5;
 	short threshold = 3;
-	Segmentation myseg(showSize.width / 2, showSize.height / 2, topk, threshold);
+	Segmentation myseg(showSize.width, showSize.height, topk, threshold);
 	//Configure HOG-SVM
 	HOG_SVM hog_svm(".\\classification\\HOG-SVM-MODEL.xml");
 	//Configure RealSense
