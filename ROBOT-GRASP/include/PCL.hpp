@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/console/print.h>
 using Eigen::Matrix4f;
 
 /************************************************************************/

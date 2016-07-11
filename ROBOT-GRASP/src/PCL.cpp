@@ -1,7 +1,6 @@
 #include "PCL.hpp"
 
 #include <pcl/common/time.h>
-#include <pcl/console/print.h>
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/features/fpfh_omp.h>
 #include <pcl/filters/filter.h>
