@@ -439,6 +439,7 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 	PXCCapture::Sample *sample;
 	PXCImage *pxcdepth, *pxccolor;
 	long framecnt;
+	int state = 0;
 	//Load3dModel
 	const float leaf = 0.01f;
 	PointCloudNT::Ptr model(new PointCloudNT);
@@ -451,7 +452,9 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 	//Configure HOG-SVM
 	HOG_SVM hog_svm(".\\classification\\HOG-SVM-MODEL.xml");
 	//Configure RealSense
-	configRealsense();
+	state = configRealsense();
+	if (state < 0)	
+		return state;
 	//Configure Draw Point Cloud
 	DrawWorld dw(pxcsession_, camera_);
 	//Detect each video frame

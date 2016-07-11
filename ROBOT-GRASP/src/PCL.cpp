@@ -1,10 +1,10 @@
 #include "PCL.hpp"
 
+#include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/registration/icp.h>
 #include <pcl/registration/sample_consensus_prerejective.h>
-#include <pcl/visualization/pcl_visualizer.h>
 
 
 /************************************************************************/
@@ -79,7 +79,6 @@ void EstimateFPFH(PointCloudNT::Ptr &model, FeatureCloudT::Ptr &model_features, 
 	fest.setInputNormals(model);
 	fest.compute(*model_features);
 }
-
 
 /************************************************************************/
 /* Registration with RANSAC and ICP                                     */

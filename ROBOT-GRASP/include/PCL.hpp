@@ -14,7 +14,7 @@
 #include <pcl/common/time.h>
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/features/fpfh_omp.h>
-#include <pcl/filters/filter.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 using Eigen::Matrix4f;
 
