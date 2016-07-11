@@ -162,7 +162,6 @@ int MyRealsense::configRealsense()
 	return 0;
 }
 
-
 int MyRealsense::dataAcquire()
 {
 	////Detect dir exist, if not, create
