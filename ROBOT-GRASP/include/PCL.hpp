@@ -9,6 +9,13 @@
 #include <Eigen/Core>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/console/print.h>
+
+#include <pcl/common/time.h>
+#include <pcl/features/normal_3d_omp.h>
+#include <pcl/features/fpfh_omp.h>
+#include <pcl/visualization/pcl_visualizer.h>
+
 using Eigen::Matrix4f;
 
 /************************************************************************/
@@ -18,12 +25,36 @@ typedef pcl::PointNormal PointNT;
 typedef pcl::PointCloud<PointNT> PointCloudNT;
 typedef pcl::PointXYZ PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
+typedef pcl::FPFHSignature33 FeatureT;
+typedef pcl::FPFHEstimationOMP<PointNT, PointNT, FeatureT> FeatureEstimationT;
+typedef pcl::PointCloud<FeatureT> FeatureCloudT;
+typedef pcl::visualization::PointCloudColorHandlerCustom<PointNT> ColorHandlerNT;
+
+/************************************************************************/
+/* Output                                                               */
+/************************************************************************/
+using pcl::console::print_info;
+using pcl::console::print_warn;
+using pcl::console::print_error;
+using pcl::console::print_value;
+using pcl::console::print_debug;
+using pcl::console::print_highlight;
 
 /************************************************************************/
 /* Load model and mesh                                                  */
 /************************************************************************/
+/**
+*  @brief LoadModel: load .pcd file to program, either model or mesh
+*  @param model_path   .pcd filepath
+*  @param model        load PointCloudT/PointCloudNT to memory
+*/
 bool  LoadModel(const string model_path, PointCloudT::Ptr &model); //XYZ
 bool  LoadModel(const string model_path, PointCloudNT::Ptr &model); //Normal
+
+/************************************************************************/
+/* Load grasping region point cloud                                     */
+/************************************************************************/
+int loadGrasp(const string model_path, PointCloudT::Ptr &grasp);
 
 /************************************************************************/
 /* Downsample model point cloud                                         */
@@ -33,7 +64,7 @@ void Downsample(PointCloudNT::Ptr &model, float leaf);
 /************************************************************************/
 /* Estimate FPFH features                                               */
 /************************************************************************/
-//void EstimateFPFH(PointCloudNT::Ptr &model, FeatureCloudT::Ptr &model_features, float leaf);
+void EstimateFPFH(PointCloudNT::Ptr &model, FeatureCloudT::Ptr &model_features, float leaf);
 
 /************************************************************************/
 /* Output Transformation Matrix                                         */
@@ -56,7 +87,6 @@ Matrix4f Registration(	PointCloudNT::Ptr &model,
 						PointCloudNT::Ptr &model_align,
 						float leaf = 0.01f,
 						bool showGraphic = true	);
-
 
 
 

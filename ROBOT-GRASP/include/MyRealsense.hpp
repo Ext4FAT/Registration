@@ -12,20 +12,28 @@
 #include <pxcsensemanager.h>
 #include <pxcprojection.h>
 
-
+/*******************************************************************************
+*   Realsense Operation.													   *
+*******************************************************************************/
 class MyRealsense: public FileOperation
 {
 public:
 	/**
 	*  @brief testRegistration: End-TO-End Test RANSAC+ICP
-	*  @param Dir					save color/depth data
+	*  @param Dir					save color/depth data, for example: ".\\xxx\\"
 	*  @param width, height, fps    camera setting
 	*/
 	MyRealsense(string& Dir, int width, int height, float fps = 60);
 	/**
 	*  @brief dataAcquire: Acquire color or depth data
+	*  @return	0: success; -1: pxcdevice error; -2: pxcproject cann't create 
 	*/
 	int dataAcquire();
+	/**
+	*  @brief configRealsense: configure Realsense and get ready for starting
+	*  @return	0: success; -1: pxcdevice error; -2: pxcproject cann't create
+	*/
+	int configRealsense();
 	/**
 	*  @brief show: demo with realtime capture video stream
 	*/
@@ -45,11 +53,11 @@ private:
 	int outputPCD(const string filename, PointSet &pSet, vector<PXCPoint3DF32> &vertices);
 
 private:
-	//DataAcquire Setting
+	// DataAcquire Setting
 	string dir_;
 	string depthDir_;
 	string colorDir_;
-	//Realsense
+	// Realsense
 	PXCSession *pxcsession_ = 0;
 	PXCSenseManager *pxcsm_ = 0;
 	PXCCapture::Device *pxcdev_ = 0;

@@ -2,10 +2,10 @@
 #include <stack>
 using std::stack;
 
-const vector<Point> Segmentation::_DIRECTIONS_ = { Point(1, 0), Point(0, -1),
-Point(-1, 0), Point(0, 1),
-Point(1, 1), Point(-1, 1),
-Point(1, -1), Point(-1, -1) };
+const vector<Point> Segmentation::_DIRECTIONS_ = {	Point(1, 0), Point(0, -1),
+													Point(-1, 0), Point(0, 1),
+													Point(1, 1), Point(-1, 1),
+													Point(1, -1), Point(-1, -1) };
 const vector<Point> Segmentation::_DIR_ = { Point(1, 0), Point(0, 1), Point(1, 1) };
 
 
@@ -29,49 +29,8 @@ Segmentation::Segmentation(Size sz, unsigned k, short t)
 	this->randColor();
 }
 
-/*
 void Segmentation::Segment(Mat& depth, Mat& color)
 {
-Mat disp = Mat::zeros(depth.size(), CV_8UC3);
-Mat visit = Mat::zeros(depth.size(), CV_8U);
-//Region Growing
-for (int i = 0; i < RANGE_.width; i++)
-for (int j = 0; j < RANGE_.height; j++) {
-Point current(i, j);
-short value = depth.at<short>(current);
-if (!visit.at<char>(current)) {
-PointSet v;
-v.push_back(current);
-visit.at<char>(current) = 255;
-DFS(depth, visit, current, threshold_, v);
-//insert segment
-if (!value)
-blackRegions_.push_back(v);
-else
-mainRegions_.push_back(v);
-}
-}
-//Vec3b xxx(255, 255, 255);
-//drawBlack(blackRegions, disp, xxx);
-//drawSobel(depth);
-sort( mainRegions_.begin(), mainRegions_.end(),
-[](const vector<Point>& v1, const vector<Point>& v2){return v1.size() > v2.size();} );
-Mat pre = Mat::zeros(depth.size(), CV_8UC3);
-draw(mainRegions_, pre, colors_);
-imshow("before merging", pre);
-regionMerge(depth, mainRegions_, blackRegions_, topk_, 1);
-
-draw(mainRegions_, disp, colors_);
-//drawRegions(mainRegions_, color, depth, disp);
-drawBoundBox(mainRegions_, distance_, color, depth);
-
-imshow("segmentation", disp);
-}
-*/
-
-void Segmentation::Segment(Mat& depth, Mat& color)
-{
-	Mat disp = Mat::zeros(depth.size(), CV_8UC3);
 	Mat visit = Mat::zeros(depth.size(), CV_8U);
 	//Region Growing
 	for (int i = 0; i < RANGE_.width; i++)
@@ -88,27 +47,27 @@ void Segmentation::Segment(Mat& depth, Mat& color)
 					mainRegions_.push_back(pSet);
 			}
 		}
-	//Vec3b xxx(255, 255, 255);
-	//drawBlack(blackRegions, disp, xxx);
-	//drawSobel(depth);
 	sort(mainRegions_.begin(), mainRegions_.end(),
 		[](const vector<Point>& v1, const vector<Point>& v2){return v1.size() > v2.size(); });
+	//show segmentation before and after
 	Mat pre = Mat::zeros(depth.size(), CV_8UC3);
 	draw(mainRegions_, pre, colors_);
 	imshow("before merging", pre);
+
 	regionMerge(depth, mainRegions_, blackRegions_, topk_, 1);
-
+	
+	Mat disp = Mat::zeros(depth.size(), CV_8UC3);
 	draw(mainRegions_, disp, colors_);
-	//drawRegions(mainRegions_, color, depth, disp);
-	drawBoundBox(mainRegions_, distance_, color, depth);
-
 	imshow("segmentation", disp);
+	
+	//show boundbox
+	Mat regions = color.clone();
+	calculateConvexHulls();
+	calculateBoundBoxex();
+	for (auto rect : boundBoxes_) 
+		rectangle(regions, rect, Scalar(255, 255, 255), 2);
+	imshow("regions", regions);
 }
-
-
-
-
-
 
 void Segmentation::DFS(Mat &depth, Mat &visit, Point cur, short &threshold, vector<Point> &v)
 {
@@ -118,7 +77,7 @@ void Segmentation::DFS(Mat &depth, Mat &visit, Point cur, short &threshold, vect
 			if (!visit.at<char>(next))
 				if (abs(depth.at<short>(next) -depth.at<short>(cur)) < threshold) {
 					v.push_back(next);
-					visit.at<char>(next) = 255;
+					visit.at<uchar>(next) = 255;
 					DFS(depth, visit, next, threshold, v);
 				}
 	}
@@ -131,7 +90,7 @@ void Segmentation::NonRecursive(Mat &depth, Mat& visit, Point& current, PointSet
 
 	pstack.push(current);
 	pSet.push_back(current);
-	visit.at<char>(current) = 255;
+	visit.at<uchar>(current) = 255;
 
 	while (!pstack.empty()) {
 		p = pstack.top();
@@ -145,7 +104,7 @@ void Segmentation::NonRecursive(Mat &depth, Mat& visit, Point& current, PointSet
 				continue;
 			if (abs(depth.at<short>(next)-depth.at<short>(p)) >= threshold_)
 				continue;
-			visit.at<char>(next) = 255;
+			visit.at<uchar>(next) = 255;
 			pstack.push(next);
 			pSet.push_back(next);
 		}
@@ -206,7 +165,7 @@ void Segmentation::regionMerge(Mat& depth, SegmentSet& segment, SegmentSet& blac
 inline Rect Segmentation::hullBoundBox(PointSet& hull)
 {
 	static Point extend(5, 5);
-	Point pmax(0, 0), pmin(1000, 1000);
+	Point pmax(0, 0), pmin(0x7fffffff, 0x7fffffff);
 	for (auto p : hull) {
 		if (p.x > pmax.x) pmax.x = p.x;
 		if (p.x < pmin.x) pmin.x = p.x;
@@ -216,6 +175,19 @@ inline Rect Segmentation::hullBoundBox(PointSet& hull)
 	return Rect(pmin - extend, pmax + extend) & RANGE_;
 }
 
+inline void Segmentation::calculateConvexHulls()
+{
+	for (auto &seg : mainRegions_) {
+		convexHulls_.push_back(PointSet());
+		convexHull(seg, convexHulls_.back(), false);
+	}
+}
+
+inline void Segmentation::calculateBoundBoxex()
+{
+	for (auto &hull : convexHulls_) 
+		boundBoxes_.push_back(hullBoundBox(hull));
+}
 
 inline bool Segmentation::isRegionInsideHull(PointSet& pSet, PointSet& hull, double minSim)
 {
@@ -254,6 +226,8 @@ void Segmentation::clear()
 	this->mainRegions_.clear();
 	this->blackRegions_.clear();
 	this->distance_.clear();
+	this->convexHulls_.clear();
+	this->boundBoxes_.clear();
 }
 
 void Segmentation::draw(SegmentSet &segment, Mat &disp, vector<Vec3b> &colors)
@@ -309,68 +283,68 @@ void Segmentation::drawSobel(Mat &depth)
 
 void Segmentation::drawRegions(SegmentSet &segment, Mat &color, Mat &depth, Mat &disp)
 {
-	vector<Mat> rMat;//(segment.size(), Mat::zeros(color.size(), CV_8UC3));
-	for (unsigned i = 0; i < segment.size(); i++) {
-		rMat.push_back(Mat::zeros(color.size(), CV_8UC3));
-		for (auto p : segment[i]) {
-			rMat.back().at<Vec3b>(p) = color.at<Vec3b>(p);
-		}
-		//draw pointset
+	//vector<Mat> rMat;//(segment.size(), Mat::zeros(color.size(), CV_8UC3));
+	//for (unsigned i = 0; i < segment.size(); i++) {
+	//	rMat.push_back(Mat::zeros(color.size(), CV_8UC3));
+	//	for (auto p : segment[i]) {
+	//		rMat.back().at<Vec3b>(p) = color.at<Vec3b>(p);
+	//	}
+	//	//draw pointset
 
-		//for (auto p: segment[i])
-		//    rMat.back().at<Vec3b>(p) = color.at<Vec3b>(p);
+	//	//for (auto p: segment[i])
+	//	//    rMat.back().at<Vec3b>(p) = color.at<Vec3b>(p);
 
-		Mat canny, gray, dgray, poly;
-		cv::cvtColor(rMat[i], gray, cv::COLOR_RGB2GRAY);
-		cv::medianBlur(gray, gray, 5);
-		//imshow("wqewq", gray);
-		cv::Canny(gray, canny, 100, 300);
-		//cv::dilate(canny, canny, Mat());
-		//cv::erode(canny, canny, Mat());
+	//	Mat canny, gray, dgray, poly;
+	//	cv::cvtColor(rMat[i], gray, cv::COLOR_RGB2GRAY);
+	//	cv::medianBlur(gray, gray, 5);
+	//	//imshow("wqewq", gray);
+	//	cv::Canny(gray, canny, 100, 300);
+	//	//cv::dilate(canny, canny, Mat());
+	//	//cv::erode(canny, canny, Mat());
 
-		//imwrite("canny.png", canny);
-		//waitKey( - 1);
+	//	//imwrite("canny.png", canny);
+	//	//waitKey( - 1);
 
-		vector<Point> vex;
-		vector<Point> whitePoint;
-		for (int i = 0; i < RANGE_.width; i++) {
-			for (int j = 0; j < RANGE_.height; j++) {
-				if (canny.at<char>(Point(i, j)))
-					whitePoint.push_back(Point(i, j));
-			}
-		}
-		cv::approxPolyDP(whitePoint, vex, 50, true);
-		for (auto p : vex) {
-			cv::circle(color, p, 3, Scalar(255, 0, 0), 3);
-		}
+	//	vector<Point> vex;
+	//	vector<Point> whitePoint;
+	//	for (int i = 0; i < RANGE_.width; i++) {
+	//		for (int j = 0; j < RANGE_.height; j++) {
+	//			if (canny.at<char>(Point(i, j)))
+	//				whitePoint.push_back(Point(i, j));
+	//		}
+	//	}
+	//	cv::approxPolyDP(whitePoint, vex, 50, true);
+	//	for (auto p : vex) {
+	//		cv::circle(color, p, 3, Scalar(255, 0, 0), 3);
+	//	}
 
-		imshow("xxx", color);
-		//waitKey( - 1);
-
-
-		if (i)  continue;
+	//	imshow("xxx", color);
+	//	//waitKey( - 1);
 
 
-		/*
-		vector<Point> corners;
-		cv::goodFeaturesToTrack(canny, corners, 10, 0.01, 60, Mat(), 3, false, 4);
-		for (auto p: corners)
-		cv::circle(color, p, 2, Scalar(255, 0, 0), 2);
-		*/
+	//	//if (i)  continue;
+
+
+	//	/*
+	//	vector<Point> corners;
+	//	cv::goodFeaturesToTrack(canny, corners, 10, 0.01, 60, Mat(), 3, false, 4);
+	//	for (auto p: corners)
+	//	cv::circle(color, p, 2, Scalar(255, 0, 0), 2);
+	//	*/
 
 
 
 
-		//vector<vector<Point>> contours;
-		//cv::findContours(canny, contours, RETR_EXTERNAL, 1);
-		//cv::drawContours(color, contours,  -1, Scalar(0, 0, 0), 2);
+	//	//vector<vector<Point>> contours;
+	//	//cv::findContours(canny, contours, RETR_EXTERNAL, 1);
+	//	//cv::drawContours(color, contours,  -1, Scalar(0, 0, 0), 2);
 
 
-		//lineDection(canny, i);
+	//	//lineDection(canny, i);
 
-		imshow(to_string(i), canny);
-		//imshow(to_string(i), rMat.back());
-	}
+	//	imshow(to_string(i), canny);
+	//	//imshow(to_string(i), rMat.back());
+	//}
 
 }
 
@@ -381,28 +355,11 @@ void Segmentation::drawBoundBox(SegmentSet &segment, vector<double> &distance, M
 
 	for (auto seg : segment) {
 		vector<Point> hull;
-		cv::convexHull(seg, hull, false);
+		convexHull(seg, hull, false);
 		//RotatedRect rr = cv::minAreaRect(hull);
-		Rect boundbox = Segmentation::hullBoundBox(seg);
-		Point center = (boundbox.tl() + boundbox.br()) / 2;
+		Rect boundbox = Segmentation::hullBoundBox(hull);
 		rectangle(color, boundbox, Scalar(255, 255, 255), 2);
-		//rectangle(depth, boundbox, Scalar(30000), 2);
-		//cv::putText(color, to_string((int)distance[count]), center, 0, 0.5, Scalar(0, 0, 255), 2);
-		//cv::putText(depth, to_string((int)distance[count]), center, 0, 0.5, Scalar(30000), 2);
-
-		if (count == 0){
-			rectangle(classification, boundbox, Scalar(0, 0, 255), 2);
-			cv::putText(classification, categoryName, center, 0, 0.5, Scalar(0, 0, 255), 2);
-		}
 		count++;
-		//imshow("a" + to_string(count), color(boundbox));
-
-		/*
-		std::vector<cv::Point>::const_iterator it;
-		for (it = hull.begin() + 1; it != hull.end(); it++)
-		line(color, *(it-1), *it, Scalar(120, 120, 120), 2);
-		line(color, hull[0], hull.back(), Scalar(120, 120, 120), 2);
-		*/
 	}
 	imshow("regions", color);
 	imshow("classification", classification);

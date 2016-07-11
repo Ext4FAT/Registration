@@ -1,38 +1,57 @@
-#include <io.h>
 #include "FileOperation.hpp"
+
+#include <windows.h>
+#include <vector>
+#include <string>
 
 //Get current dir filepath
 std::vector<std::string> FileOperation::getCurdirFilePath(std::string dirPath)
 {
-	long  hFile = 0;
-	struct _finddata_t fileinfo;
-	std::string p;
+	WIN32_FIND_DATA ffd;
+	HANDLE hFind = INVALID_HANDLE_VALUE;
 	std::vector<std::string> files;
-	if ((hFile = _findfirst(p.assign(dirPath).append("\\*").c_str(), &fileinfo)) != -1) {
-		do {
-			if (!(fileinfo.attrib & _A_SUBDIR))
-				files.push_back(p.assign(dirPath).append("\\").append(fileinfo.name));
-				//dirPath + "\\" + fileinfo.name
-		} while (_findnext(hFile, &fileinfo) == 0);
-		_findclose(hFile);
-	}
+	hFind = FindFirstFile((dirPath + "\\*").c_str(), &ffd);
+	do
+	{
+		if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+			files.push_back(dirPath + "\\" + ffd.cFileName);
+	} while (FindNextFile(hFind, &ffd) != 0);
+	FindClose(hFind);
 	return files;
 }
 
 //Get current dir filename
 std::vector<std::string> FileOperation::getCurdirFileName(std::string dirPath)
 {
-	long  hFile = 0;
-	struct _finddata_t fileinfo;
-	std::string p;
+	WIN32_FIND_DATA ffd;
+	HANDLE hFind = INVALID_HANDLE_VALUE;
 	std::vector<std::string> files;
-	if ((hFile = _findfirst(p.assign(dirPath).append("\\*").c_str(), &fileinfo)) != -1) {
-		do {
-			if (!(fileinfo.attrib & _A_SUBDIR))
-				files.push_back(fileinfo.name);
-		} while (_findnext(hFile, &fileinfo) == 0);
-		_findclose(hFile);
-	}
+	hFind = FindFirstFile((dirPath + "\\*").c_str(), &ffd);
+	do
+	{
+		if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+			files.push_back(ffd.cFileName);
+	} while (FindNextFile(hFind, &ffd) != 0);
+	FindClose(hFind);
+	return files;
+}
+
+//Get subdir 
+std::vector<std::string> FileOperation::getSubdirName(std::string dirPath)
+{
+	WIN32_FIND_DATA ffd;
+	HANDLE hFind = INVALID_HANDLE_VALUE;
+	std::vector<std::string> files;
+	hFind = FindFirstFile((dirPath + "\\*").c_str(), &ffd);
+	do
+	{
+		if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+			files.push_back(ffd.cFileName);
+			if (files.back() == "." || files.back() == "..")
+				files.pop_back();
+		}
+	} while (FindNextFile(hFind, &ffd) != 0);
+	FindClose(hFind);
 	return files;
 }
 

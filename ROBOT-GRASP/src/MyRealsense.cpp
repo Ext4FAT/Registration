@@ -1,9 +1,9 @@
-#include "MyRealsense.hpp"
-#include "DrawWorld.hpp"
-#include "Macro.h"
-#include "Segmentation.hpp"
 #include "PCL.hpp"
-
+#include "Macro.h"
+#include "DrawWorld.hpp"
+#include "Segmentation.hpp"
+#include "HOG-SVM.hpp"
+#include "MyRealsense.hpp"
 
 size_t PXC2PCL(PointSet &pSet, vector<PXCPoint3DF32> &vertices, PointCloudNT::Ptr &scene, float scale = 1.f / 300.f)
 {
@@ -36,10 +36,10 @@ void placeWindows(int topk)
 	cv::moveWindow("classification", 350, 300);
 	cv::moveWindow("regions", 0, 300);
 	cv::moveWindow("reflect", 1600, 0);
-	for (int k = 0; k < topk; k++) {
-		cv::namedWindow(to_string(k));
-		cv::moveWindow(to_string(k), (k + 2) * 350, 300);
-	}
+	//for (int k = 0; k < topk; k++) {
+	//	cv::namedWindow(to_string(k));
+	//	cv::moveWindow(to_string(k), (k) * 350, 600);
+	//}
 }
 
 vector<PXCPointF32> genRegistrationResult(PXCProjection *projection, PointCloudNT::Ptr &model, Segmentation &myseg, vector<PXCPoint3DF32> &vertices, double scale, float leaf)
@@ -74,7 +74,7 @@ void showRegistrationResult(vector<PXCPointF32> &show2d, Mat &color)
 	imshow("reflect", color);
 }
 
-//目录结尾都带反斜杠 
+//Dir example : ".\\xxx\\"
 MyRealsense::MyRealsense(string& Dir, int width, int height, float fps) 
 {
 	dir_ = Dir;
@@ -131,13 +131,35 @@ int MyRealsense::outputPCD(const string filename, PointSet &pSet, vector<PXCPoin
 	return 1;
 }
 
-inline std::string MyRealsense::getSavePath(std::string dir,time_t slot, long framecnt)
+inline string MyRealsense::getSavePath(std::string dir,time_t slot, long framecnt)
 {
 	std::stringstream ss;
 	std::string filename;
 	ss << dir << slot << "-" << framecnt << ".png";
 	ss >> filename;
 	return filename;
+}
+
+int MyRealsense::configRealsense()
+{
+	//Configure RealSense
+	pxcsession_ = PXCSession::CreateInstance();
+	pxcsm_ = pxcsession_->CreateSenseManager();
+	pxcsm_->EnableStream(PXCCapture::STREAM_TYPE_COLOR, camera_.width, camera_.height, fps_);
+	pxcsm_->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, camera_.width, camera_.height, fps_);
+	//Query Information
+	pxcsm_->Init();
+	pxcdev_ = pxcsm_->QueryCaptureManager()->QueryDevice();
+	if (!pxcdev_) {
+		MESSAGE_COUT("ERROR", "Failed to create an SDK SenseManager");
+		return -1;
+	}
+	projection_ = pxcdev_->CreateProjection();
+	if (!projection_) {
+		MESSAGE_COUT("ERROR", "Failed to create an SDK Projection");
+		return -2;
+	}
+	return 0;
 }
 
 int MyRealsense::dataAcquire()
@@ -411,43 +433,32 @@ int MyRealsense::show(){}
 int MyRealsense::testRegistration(const string model_path, double PointCloudScale)
 {
 	//Define variable
+	Size showSize = { camera_.width / 2, camera_.height / 2 }; //segement and show size is the half of camera
 	Mat color, depth, display;
 	vector<PXCPoint3DF32> vertices(camera_.height*camera_.width);
 	PXCCapture::Sample *sample;
 	PXCImage *pxcdepth, *pxccolor;
 	long framecnt;
-	//Configure RealSense
-	pxcsession_ = PXCSession::CreateInstance();
-	pxcsm_ = pxcsession_->CreateSenseManager();
-	pxcsm_->EnableStream(PXCCapture::STREAM_TYPE_COLOR, camera_.width, camera_.height, fps_);
-	pxcsm_->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, camera_.width, camera_.height, fps_);
-	//Configure Draw
-	DrawWorld dw(pxcsession_, camera_);
-	//Configure Segmentation
-	unsigned topk = 5;
-	short threshold = 3;
-	Segmentation myseg(camera_.width / 2, camera_.height / 2, topk, threshold);
-	//placeWindows(topk);
-	placeWindows(1);
-	
-	//Query Information
-	pxcsm_->Init();
-	pxcdev_ = pxcsm_->QueryCaptureManager()->QueryDevice();
-	if (!pxcdev_) {
-		MESSAGE_COUT("ERROR", "Failed to create an SDK SenseManager");
-		return -1;
-	}
-	projection_ = pxcdev_->CreateProjection();
-	if (!projection_) {
-		MESSAGE_COUT("ERROR", "Failed to create an SDK Projection");
-		return -1;
-	}
+	int state = 0;
 	//Load3dModel
 	const float leaf = 0.01f;
 	PointCloudNT::Ptr model(new PointCloudNT);
 	LoadModel(model_path, model);
 	Downsample(model, leaf);
+	//Configure Segmentation
+	unsigned topk = 5;
+	short threshold = 3;
+	Segmentation myseg(showSize.width, showSize.height, topk, threshold);
+	//Configure HOG-SVM
+	HOG_SVM hog_svm(".\\classification\\HOG-SVM-MODEL.xml");
+	//Configure RealSense
+	state = configRealsense();
+	if (state < 0)	
+		return state;
+	//Configure Draw Point Cloud
+	DrawWorld dw(pxcsession_, camera_);
 	//Detect each video frame
+	placeWindows(topk);
 	for (framecnt = 1; (1); framecnt++) {
 		if (pxcsm_->AcquireFrame(true) < PXC_STATUS_NO_ERROR)	break;
 		//Query the realsense color and depth, and project depth to color
@@ -457,8 +468,7 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 		pxcdepth = projection_->CreateDepthImageMappedToColor(pxcdepth, pxccolor);
 		//Generate Point Cloud
 		pxcStatus sts = projection_->QueryVertices(pxcdepth, &vertices[0]);
-		if (sts >= PXC_STATUS_NO_ERROR) {
-			//show
+		if (sts >= PXC_STATUS_NO_ERROR) { // Show Point Cloud
 			PXCImage* drawVertices = dw.DepthToWorldByQueryVertices(pxcdepth, vertices);
 			if (drawVertices){
 				display = PXCImage2Mat(drawVertices);
@@ -470,29 +480,34 @@ int MyRealsense::testRegistration(const string model_path, double PointCloudScal
 		color = PXCImage2Mat(pxccolor);
 		if (!depth.cols || !color.cols)	continue;
 		Mat depth2, color2;
-		resize(depth, depth2, Size(320, 240));
-		resize(color, color2, Size(320, 240));
+		resize(depth, depth2, showSize);
+		resize(color, color2, showSize);
 		imshow("color", color2);
-
-		Mat show = color2.clone();
-		myseg.completeDepth(depth);
-		myseg.Segment(depth2, color2);
-		resize(display, display, Size(320, 240));
+		imshow("depth", 65536 / 1200 * depth2);
+		resize(display, display, showSize);
 		//show segment Point Cloud
-		int S = 1;
-		for (int k = 0; k < S; k++){
-			for (auto p : myseg.mainRegions_[k]) 
-				show.at<Vec3b>(p) = display.at<Vec3b>(p);
-			imshow(to_string(k), show);
-		}
-		//show registration
-		if (waitKey(1) == ' ') {
-			cout << "[" << framecnt << "]" << endl;
-			vector<PXCPointF32> show2d = genRegistrationResult(projection_, model, myseg, vertices, PointCloudScale, leaf);
-			if (show2d.size()) {
-				showRegistrationResult(show2d, color);
-				if (waitKey(-1) == 27)
-					break;
+		myseg.Segment(depth2, color2);
+		for (int k = 0; k < topk; k++){
+			if (1 == hog_svm.predict(color2(myseg.boundBoxes_[k]))) {
+				//label rectangle
+				rectangle(color2, myseg.boundBoxes_[k], Scalar(0, 0, 255), 2);
+				imshow("classification", color2);
+				////show point cloud
+				//Mat show = color2.clone();
+				//for (auto p : myseg.mainRegions_[k])
+				//	show.at<Vec3b>(p) = display.at<Vec3b>(p);
+				//imshow(to_string(k), show);
+				//show registration
+				if (waitKey(1) == ' ') {
+					cout << "[" << framecnt << "]" << endl;
+					vector<PXCPointF32> show2d = genRegistrationResult(projection_, model, myseg, vertices, PointCloudScale, leaf);
+					if (show2d.size()) {
+						showRegistrationResult(show2d, color);
+						if (waitKey(-1) == 27)
+							break;
+					}
+				}
+
 			}
 		}
 		//Release

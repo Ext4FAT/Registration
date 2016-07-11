@@ -1,35 +1,17 @@
 #include "PCL.hpp"
 
-#include <pcl/common/time.h>
-#include <pcl/console/print.h>
-#include <pcl/features/normal_3d_omp.h>
-#include <pcl/features/fpfh_omp.h>
 #include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/registration/icp.h>
 #include <pcl/registration/sample_consensus_prerejective.h>
-#include <pcl/visualization/pcl_visualizer.h>
-// Types
-typedef pcl::FPFHSignature33 FeatureT;
-typedef pcl::FPFHEstimationOMP<PointNT, PointNT, FeatureT> FeatureEstimationT;
-typedef pcl::PointCloud<FeatureT> FeatureCloudT;
-typedef pcl::visualization::PointCloudColorHandlerCustom<PointNT> ColorHandlerNT;
-//output
-using pcl::console::print_info;
-using pcl::console::print_warn;
-using pcl::console::print_error;
-using pcl::console::print_value;
-using pcl::console::print_debug;
-using pcl::console::print_highlight;
-
 
 
 /************************************************************************/
 /* Load model or mesh                                                  */
 /************************************************************************/
 /**
-*  @brief LoadModel: load .pcd file to program, either model or mesh 
+*  @brief LoadModel: load .pcd file to program, either model or mesh
 *  @param model_path   .pcd filepath
 *  @param model        load PointCloudT/PointCloudNT to memory
 */
@@ -50,6 +32,15 @@ bool  LoadModel(const string model_path, PointCloudNT::Ptr &model) //Normal
 		return false;
 	}
 	return true;
+}
+
+/************************************************************************/
+/* Load grasping region point cloud                                     */
+/************************************************************************/
+int loadGrasp(const string model_path, PointCloudT::Ptr &grasp)
+{
+	//TODO
+	return 0;
 }
 
 /************************************************************************/
@@ -88,7 +79,6 @@ void EstimateFPFH(PointCloudNT::Ptr &model, FeatureCloudT::Ptr &model_features, 
 	fest.setInputNormals(model);
 	fest.compute(*model_features);
 }
-
 
 /************************************************************************/
 /* Registration with RANSAC and ICP                                     */
