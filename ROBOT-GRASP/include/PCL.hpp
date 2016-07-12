@@ -12,6 +12,7 @@
 #include <pcl/console/print.h>
 
 #include <pcl/common/time.h>
+#include <pcl/common/transforms.h>
 #include <pcl/features/principal_curvatures.h>
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/features/fpfh_omp.h>
@@ -58,7 +59,8 @@ bool  LoadModel(const string model_path, PointCloudNT::Ptr &model); //Normal
 /************************************************************************/
 /* Load grasping region point cloud                                     */
 /************************************************************************/
-int loadGrasp(const string model_path, PointCloudT::Ptr &grasp);
+bool loadGraspPcd(const string model_path, PointCloudNT::Ptr &grasp);
+bool loadGrasp(const string model_path, PointCloudT::Ptr &grasp);
 
 /************************************************************************/
 /* Downsample model point cloud                                         */

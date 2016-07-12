@@ -3,6 +3,7 @@
 #include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/io/obj_io.h>
 #include <pcl/registration/icp.h>
 #include <pcl/registration/sample_consensus_prerejective.h>
 
@@ -37,10 +38,25 @@ bool  LoadModel(const string model_path, PointCloudNT::Ptr &model) //Normal
 /************************************************************************/
 /* Load grasping region point cloud                                     */
 /************************************************************************/
-int loadGrasp(const string model_path, PointCloudT::Ptr &grasp)
+bool loadGraspPcd(const string model_path, PointCloudNT::Ptr &grasp)
+{
+	pcl::ScopeTime t("[Load grasping point regions]");
+	if (pcl::io::loadPCDFile<PointNT>(model_path, *grasp) < 0) {
+		pcl::console::print_error("Error loading object file!\n");
+		return false;
+	}
+	return true;
+}
+
+bool loadGrasp(const string model_path, PointCloudT::Ptr &grasp)
 {
 	//TODO
-	return 0;
+	pcl::ScopeTime t("[Load grasping point regions]");
+	if (pcl::io::loadOBJFile<PointT>(model_path, *grasp) < 0) {
+		pcl::console::print_error("Error loading object file!\n");
+		return false;
+	}
+	return true;
 }
 
 /************************************************************************/
@@ -108,7 +124,6 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	Matrix4f transformation_icp = Matrix4f::Identity();
 	//const float leaf = 0.005f; 
 
-	//
 	pcl::visualization::PCLVisualizer viewer("RANSAC-ICP");
 	{
 		pcl::ScopeTime t("[Add init position]");
@@ -193,14 +208,19 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	//Eigen::Matrix4f inverse = transformation_icp.inverse() * transformation;
 	Eigen::Matrix4f inverse = transformation_icp.inverse();
 	pcl::transformPointCloud(*model_align, *model_align, inverse);
+
 	//pcl::transformPointCloud(*model, *model, inverse);
 	if (showGraphic) {
 		//Show graphic result
 		viewer.addPointCloud(mesh, ColorHandlerNT(mesh, 0.0, 255.0, 0.0), "mesh");
 		//viewer.addPointCloud(model, ColorHandlerNT(model, 0.0, 0.0, 255.0), "model");
 		viewer.addPointCloud(model_align, ColorHandlerNT(model_align, 0.0, .0, 255.0), "model_align");
+		
+		
+		//viewer.addPointCloud(grasp, ColorHandlerNT(grasp, 0.0, 255.0, 255.0), "grasp");
+		
 		viewer.spin();
 	}
 	viewer.close();
-	return transformation_icp * transformation_ransac;
+	return inverse * transformation_ransac;
 }

@@ -41,8 +41,9 @@ public:
 	/**
 	*  @brief testRegistration: End-TO-End Test RANSAC+ICP
 	*  @param model_path   which model to load (.pcd file format)
+	*  @param grasp_path   which model to load (.obj file format)
 	*/
-	int testRegistration(const string model_path, double PointCloudScale);
+	int testRegistration(const string model_path, const string grasp_path, double PointCloudScale);
 	/**
 	*  @brief PXCImage2Mat: Convert RealSense's PXCImage to Opencv's Mat
 	*/
