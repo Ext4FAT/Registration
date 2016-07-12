@@ -69,6 +69,16 @@ void Downsample(PointCloudNT::Ptr &model, float leaf)
 }
 
 /************************************************************************/
+/* Estimate model curvatures                                            */
+/************************************************************************/
+void EstimateCurvatures(PointCloudNT::Ptr &model, float radius)
+{
+	pcl::PrincipalCurvaturesEstimation<PointNT, pcl::Normal, pcl::PrincipalCurvatures> principalCurvaturesEstimation;
+	principalCurvaturesEstimation.setInputCloud(model);
+
+}
+
+/************************************************************************/
 /* Estimate FPFH features                                               */
 /************************************************************************/
 void EstimateFPFH(PointCloudNT::Ptr &model, FeatureCloudT::Ptr &model_features, float leaf)
@@ -119,8 +129,7 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	}
 	{
 		pcl::ScopeTime t("[Estimate normals for mesh]");
-
-		pcl::NormalEstimationOMP <PointNT, PointNT> nest;
+		NormalEstimationNT nest;
 		nest.setRadiusSearch(leaf);
 		nest.setInputCloud(mesh);
 		nest.compute(*mesh);

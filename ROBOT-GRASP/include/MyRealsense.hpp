@@ -50,7 +50,7 @@ public:
 private:
 	int captureDepthandSave();
 	string getSavePath(const string dir, time_t slot, long framecnt);
-	int outputPCD(const string filename, PointSet &pSet, vector<PXCPoint3DF32> &vertices);
+	int savePCD(const string filename, PointSet &pSet, vector<PXCPoint3DF32> &vertices);
 
 private:
 	// DataAcquire Setting

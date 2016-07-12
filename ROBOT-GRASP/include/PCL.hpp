@@ -12,8 +12,10 @@
 #include <pcl/console/print.h>
 
 #include <pcl/common/time.h>
+#include <pcl/features/principal_curvatures.h>
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/features/fpfh_omp.h>
+
 #include <pcl/visualization/pcl_visualizer.h>
 
 using Eigen::Matrix4f;
@@ -26,6 +28,8 @@ typedef pcl::PointCloud<PointNT> PointCloudNT;
 typedef pcl::PointXYZ PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 typedef pcl::FPFHSignature33 FeatureT;
+
+typedef pcl::NormalEstimationOMP<PointNT, PointNT> NormalEstimationNT;
 typedef pcl::FPFHEstimationOMP<PointNT, PointNT, FeatureT> FeatureEstimationT;
 typedef pcl::PointCloud<FeatureT> FeatureCloudT;
 typedef pcl::visualization::PointCloudColorHandlerCustom<PointNT> ColorHandlerNT;
@@ -60,6 +64,12 @@ int loadGrasp(const string model_path, PointCloudT::Ptr &grasp);
 /* Downsample model point cloud                                         */
 /************************************************************************/
 void Downsample(PointCloudNT::Ptr &model, float leaf);
+
+
+/************************************************************************/
+/* Estimate model curvatures                                            */
+/************************************************************************/
+void EstimateCurvatures(PointCloudNT::Ptr &model, float radius);
 
 /************************************************************************/
 /* Estimate FPFH features                                               */
