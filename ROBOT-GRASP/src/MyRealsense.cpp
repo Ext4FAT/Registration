@@ -4,9 +4,6 @@
 #include "Segmentation.hpp"
 #include "HOG-SVM.hpp"
 #include "MyRealsense.hpp"
-//thread
-#include <thread>
-using std::thread;
 
 typedef vector<PXCPointF32> PXC2DPointSet;
 class Reflect_Result {
@@ -19,7 +16,9 @@ public:
 	PXC2DPointSet grasp;
 };
 
-// Thread show image
+atomic_bool wait(false);
+
+// Thread
 void myimshow(const string winname, Mat &img)
 {
 	imshow(winname, img);
@@ -107,7 +106,7 @@ vector<PXCPointF32> genRegistrationResult(	PXCProjection *projection,
 
 Reflect_Result genRegistrationResult(	PXCProjection *projection,
 										PointCloudNT::Ptr &model,
-										PointCloudNT::Ptr &grasp,
+										PointCloudT::Ptr &grasp,
 										PointSet &segment,
 										vector<PXCPoint3DF32> &vertices,
 										double scale,
@@ -116,15 +115,17 @@ Reflect_Result genRegistrationResult(	PXCProjection *projection,
 	//generate Point Cloud
 	PointCloudNT::Ptr mesh(new PointCloudNT);
 	PointCloudNT::Ptr model_align(new PointCloudNT);
-	PointCloudNT::Ptr grasp_align(new PointCloudNT);
+	PointCloudT::Ptr grasp_align(new PointCloudT);
 	size_t sz = PXC2PCL(segment, vertices, mesh, 1.0 / scale);
 	cout << "Generate Point Cloud: " << sz << endl;
 	//Alignment
 	Matrix4f transformation = Registration(model, mesh, model_align, leaf, true);
 	if (transformation == Matrix4f::Identity()) //Alignment failed 
 		return{};
+
 	pcl::transformPointCloud(*grasp, *grasp_align, transformation);
 	//Reflect
+	pcl::ScopeTime t("[Reflect]");
 	Reflect_Result show2d;
 	show2d.model.resize(model_align->size());
 	show2d.grasp.resize(grasp_align->size());
@@ -141,11 +142,6 @@ Reflect_Result genRegistrationResult(	PXCProjection *projection,
 	return show2d;
 }
 
-
-
-
-
-
 void showRegistrationResult(vector<PXCPointF32> &show2d, Mat &img, Vec3b color)
 {
 	for (auto p : show2d) {
@@ -157,6 +153,35 @@ void showRegistrationResult(vector<PXCPointF32> &show2d, Mat &img, Vec3b color)
 	imshow("reflect", img);
 }
 
+
+void Reflect(	long framecnt,
+				string name,
+				Mat& img,
+				PXCProjection *projection,
+				PointCloudNT::Ptr &model,
+				PointCloudT::Ptr &grasp,
+				PointSet &segment,
+				vector<PXCPoint3DF32> &vertices,
+				double scale,
+				float leaf)
+{
+	MESSAGE_COUT("[" << framecnt << "]", name);
+	Mat color = img.clone();
+	//vector<PXCPointF32> show2d = genRegistrationResult(projection_, model, myseg, vertices, PointCloudScale, leaf);
+	Reflect_Result show2d = genRegistrationResult(projection, model, grasp, segment, vertices, scale, leaf);
+
+	if (!show2d.isEmpty()) {
+		showRegistrationResult(show2d.model, color, Vec3b(255, 0, 255));
+		showRegistrationResult(show2d.grasp, color, Vec3b(0, 255, 255));
+		//if (waitKey(-1) == 27) {
+		//	wait = false;
+		//	return;
+		//}
+	}
+	wait = false;
+}
+
+
 //Dir example : ".\\xxx\\"
 MyRealsense::MyRealsense(string& Dir, int width, int height, float fps) 
 {
@@ -166,6 +191,7 @@ MyRealsense::MyRealsense(string& Dir, int width, int height, float fps)
 	camera_.width = width;
 	camera_.height = height;
 	fps_ = fps;
+	wait_ = false;
 }
 
 //Convert RealSense's PXCImage to Opencv's Mat
@@ -536,7 +562,7 @@ int MyRealsense::testRegistration(const string model_path, const string grasp_pa
 	LoadModel(model_path, model);
 	Downsample(model, leaf);
 	//Load grasping point region
-	PointCloudNT::Ptr grasp(new PointCloudNT);
+	PointCloudT::Ptr grasp(new PointCloudT);
 	loadGraspPcd(".\\model\\bottle\\bottle-grasp-scaled.pcd", grasp);
 	//Configure Segmentation
 	unsigned topk = 5;
@@ -593,23 +619,28 @@ int MyRealsense::testRegistration(const string model_path, const string grasp_pa
 				//show point cloud
 				rectangle(pointcloud, boundbox, Scalar(0, 0, 255), 2);
 				drawText(pointcloud, boundbox, name);
+				imshow("classification", color2);
+				imshow("point cloud", pointcloud);
 				//Registration
 				//if (waitKey(1) == ' ') {
-					MESSAGE_COUT("[" << framecnt << "]", name);
-					//vector<PXCPointF32> show2d = genRegistrationResult(projection_, model, myseg, vertices, PointCloudScale, leaf);
-					Reflect_Result show2d = genRegistrationResult(projection_, model, grasp, myseg.mainRegions_[k], vertices, PointCloudScale, leaf);
-					
-					if (!show2d.isEmpty()) {
-						showRegistrationResult(show2d.model, color, Vec3b(255, 0, 255));
-						showRegistrationResult(show2d.grasp, color, Vec3b(0, 255, 255));
-						if (waitKey(-1) == 27)
-							break;
-					}
-				//}
+				if (!wait) {
+					wait = true;
+					thread t(	Reflect,
+								framecnt,
+								name,
+								color,
+								projection_,
+								model,
+								grasp,
+								myseg.mainRegions_[k],
+								vertices, 
+								PointCloudScale, 
+								leaf	);
+					t.detach();
+				}
 			}
 			k++;
 		}
-		imshow("classification", color2);
 		//for (int k = 0; k < topk; k++){
 		//	if (0 < hog_svm.predict(color2(myseg.boundBoxes_[k]))) {
 		//		//label rectangle

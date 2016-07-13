@@ -38,6 +38,15 @@ bool  LoadModel(const string model_path, PointCloudNT::Ptr &model) //Normal
 /************************************************************************/
 /* Load grasping region point cloud                                     */
 /************************************************************************/
+bool loadGraspPcd(const string model_path, PointCloudT::Ptr &grasp)
+{
+	pcl::ScopeTime t("[Load grasping point regions]");
+	if (pcl::io::loadPCDFile<PointT>(model_path, *grasp) < 0) {
+		pcl::console::print_error("Error loading object file!\n");
+		return false;
+	}
+	return true;
+}
 bool loadGraspPcd(const string model_path, PointCloudNT::Ptr &grasp)
 {
 	pcl::ScopeTime t("[Load grasping point regions]");

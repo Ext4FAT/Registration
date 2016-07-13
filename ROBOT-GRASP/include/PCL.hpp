@@ -59,7 +59,7 @@ bool  LoadModel(const string model_path, PointCloudNT::Ptr &model); //Normal
 /************************************************************************/
 /* Load grasping region point cloud                                     */
 /************************************************************************/
-bool loadGraspPcd(const string model_path, PointCloudNT::Ptr &grasp);
+bool loadGraspPcd(const string model_path, PointCloudT::Ptr &grasp);
 bool loadGrasp(const string model_path, PointCloudT::Ptr &grasp);
 
 /************************************************************************/

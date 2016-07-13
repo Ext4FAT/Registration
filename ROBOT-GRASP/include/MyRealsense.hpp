@@ -12,6 +12,12 @@
 #include <pxcsensemanager.h>
 #include <pxcprojection.h>
 
+//thread
+#include <thread>
+#include <boost\atomic.hpp>
+using boost::atomic_bool;
+using std::thread;
+
 /*******************************************************************************
 *   Realsense Operation.													   *
 *******************************************************************************/
@@ -65,4 +71,7 @@ private:
 	PXCProjection *projection_ = 0;
 	PXCSizeI32 camera_;
 	pxcF32 fps_;
+	// Concurrent
+	atomic_bool wait_;
+
 };
