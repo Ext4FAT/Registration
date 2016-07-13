@@ -119,7 +119,11 @@ Reflect_Result genRegistrationResult(	PXCProjection *projection,
 	size_t sz = PXC2PCL(segment, vertices, mesh, 1.0 / scale);
 	cout << "Generate Point Cloud: " << sz << endl;
 	//Alignment
-	Matrix4f transformation = Registration(model, mesh, model_align, leaf, true);
+	
+	//Matrix4f transformation = Registration(model, mesh, model_align, leaf, true);
+	
+	Matrix4f transformation = RegistrationNoShow(model, mesh, model_align, leaf);
+	
 	if (transformation == Matrix4f::Identity()) //Alignment failed 
 		return{};
 
@@ -168,6 +172,7 @@ void Reflect(	long framecnt,
 	MESSAGE_COUT("[" << framecnt << "]", name);
 	Mat color = img.clone();
 	//vector<PXCPointF32> show2d = genRegistrationResult(projection_, model, myseg, vertices, PointCloudScale, leaf);
+	
 	Reflect_Result show2d = genRegistrationResult(projection, model, grasp, segment, vertices, scale, leaf);
 
 	if (!show2d.isEmpty()) {

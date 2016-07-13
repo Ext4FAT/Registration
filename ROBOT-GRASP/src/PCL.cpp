@@ -233,3 +233,85 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	viewer.close();
 	return inverse * transformation_ransac;
 }
+
+Matrix4f RegistrationNoShow(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCloudNT::Ptr &model_align, float leaf) {
+	// Point cloud
+	FeatureCloudT::Ptr model_features(new FeatureCloudT);
+	FeatureCloudT::Ptr mesh_features(new FeatureCloudT);
+	Matrix4f transformation_ransac = Matrix4f::Identity();
+	Matrix4f transformation_icp = Matrix4f::Identity();
+	//const float leaf = 0.005f; 
+	{
+		pcl::ScopeTime t("[Downsample]");
+
+		pcl::VoxelGrid <PointNT> grid;
+		grid.setLeafSize(leaf, leaf, leaf);
+		//grid.setInputCloud(model);
+		//grid.filter(*model);
+		grid.setInputCloud(mesh);
+		grid.filter(*mesh);
+	}
+	{
+		pcl::ScopeTime t("[Estimate normals for mesh]");
+		NormalEstimationNT nest;
+		nest.setRadiusSearch(leaf);
+		nest.setInputCloud(mesh);
+		nest.compute(*mesh);
+	}
+	{
+		pcl::ScopeTime t("[Estimate features]");
+		FeatureEstimationT fest;
+		fest.setRadiusSearch(5 * leaf);
+		fest.setInputCloud(model);
+		fest.setInputNormals(model);
+		fest.compute(*model_features);
+		fest.setInputCloud(mesh);
+		fest.setInputNormals(mesh);
+		fest.compute(*mesh_features);
+	}
+	// RANSAC
+	pcl::SampleConsensusPrerejective <PointNT, PointNT, FeatureT> ransac;
+	ransac.setInputSource(model);
+	ransac.setSourceFeatures(model_features);
+	ransac.setInputTarget(mesh);
+	ransac.setTargetFeatures(mesh_features);
+	ransac.setMaximumIterations(50000); // Number of RANSAC iterations
+	ransac.setNumberOfSamples(4); // Number of points to sample for generating/prerejecting a pose
+	ransac.setCorrespondenceRandomness(5); // Number of nearest features to use
+	ransac.setSimilarityThreshold(0.9f); // Polygonal edge length similarity threshold
+	ransac.setMaxCorrespondenceDistance(2.5f * leaf); // Inlier threshold
+	ransac.setInlierFraction(0.25f); // Required inlier fraction for accepting a pose hypothesis
+	{
+		pcl::ScopeTime t("[RANSAC]");
+		ransac.align(*model_align);
+	}
+	transformation_ransac = ransac.getFinalTransformation();
+	if (!ransac.hasConverged()) {
+		pcl::console::print_error("RANSAC alignment failed!\n");
+		return transformation_ransac;
+	}
+	print4x4Matrix(transformation_ransac);
+	//If RANSAC success, then ICP
+	//ICP
+	int iterations = 100;
+	double EuclideanEpsilon = 2e-8;
+	int MaximumIterations = 1000;
+	pcl::IterativeClosestPoint<PointNT, PointNT> icp; //ICP algorithm
+	//icp.setInputSource(model_align);
+	//icp.setInputTarget(mesh);
+	icp.setInputSource(mesh);
+	icp.setInputTarget(model_align);
+	icp.setEuclideanFitnessEpsilon(EuclideanEpsilon);
+	icp.setMaximumIterations(MaximumIterations);
+	icp.setTransformationEpsilon(EuclideanEpsilon);
+	{
+		pcl::ScopeTime t("[ICP]");
+		icp.align(*mesh);
+	}
+	transformation_icp = icp.getFinalTransformation();
+	print4x4Matrix(transformation_icp);
+	Eigen::Matrix4f inverse = transformation_icp.inverse();
+	pcl::transformPointCloud(*model_align, *model_align, inverse);
+	
+	return inverse * transformation_ransac;
+}

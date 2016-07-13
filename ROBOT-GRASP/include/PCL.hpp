@@ -100,8 +100,11 @@ Matrix4f Registration(	PointCloudNT::Ptr &model,
 						float leaf = 0.01f,
 						bool showGraphic = true	);
 
-
-
+Matrix4f RegistrationNoShow(	PointCloudNT::Ptr &model,
+								PointCloudNT::Ptr &mesh,
+								PointCloudNT::Ptr &model_align,
+								float leaf	);
+	
 
 
 
