@@ -69,7 +69,7 @@ void placeWindows(int topk)
 	cv::moveWindow("before-merging", 700, 0);
 	cv::moveWindow("classification", 350, 300);
 	cv::moveWindow("regions", 0, 300);
-	cv::moveWindow("reflect", 1600, 0);
+	cv::moveWindow("reflect", 700, 300);
 	cv::moveWindow("point cloud", 0, 600);
 	//for (int k = 0; k < topk; k++) {
 	//	cv::namedWindow(to_string(k));
@@ -616,9 +616,10 @@ int MyRealsense::testRegistration(const string model_path, const string grasp_pa
 		int k = 0;
 		for (auto &boundbox : myseg.boundBoxes_) {
 			Mat region = color2(boundbox);
-			int predict = hog_svm.predict(region);
-			if (predict > 0) {
-				string name = hog_svm.getCategoryName(predict);
+			//int predict = hog_svm.predict(region);
+			//if (predict > 0) {
+			//	string name = hog_svm.getCategoryName(predict);
+				string name = "bottle";
 				rectangle(color2, boundbox, Scalar(0, 0, 255), 2);
 				drawText(color2, boundbox, name);
 				//show point cloud
@@ -643,8 +644,10 @@ int MyRealsense::testRegistration(const string model_path, const string grasp_pa
 								leaf	);
 					t.detach();
 				}
-			}
+			//}
 			k++;
+			if (k > 0)
+				break;
 		}
 		//for (int k = 0; k < topk; k++){
 		//	if (0 < hog_svm.predict(color2(myseg.boundBoxes_[k]))) {
@@ -670,7 +673,8 @@ int MyRealsense::testRegistration(const string model_path, const string grasp_pa
 		//}
 
 		//Release
-		waitKey(1);
+		if (' ' == waitKey(1))
+			waitKey(-1);
 		myseg.clear();
 		pxcdepth->Release();
 		pxcsm_->ReleaseFrame();
