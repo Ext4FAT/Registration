@@ -10,7 +10,8 @@ int main(int argc, char** argv)
 	string grasp_path = argc > 3 ? argv[3] : ".\\model\\bottle\\bottle-grasp-scaled.pcd";
 	//F200
 	MyRealsense robot(save_dir_path, 640, 480, 30);
-
-	robot.testRegistration(model_path, grasp_path, scale);
+	//Parameter
+	RegisterParameter para;
+	robot.testRegistration(model_path, grasp_path, scale, para);
 	return 0;
 }
