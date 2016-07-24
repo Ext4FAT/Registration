@@ -120,7 +120,7 @@ Matrix4f Registration(	PointCloudNT::Ptr &model,
 Matrix4f RegistrationNoShow(	PointCloudNT::Ptr &model,
 								PointCloudNT::Ptr &mesh,
 								PointCloudNT::Ptr &model_align,
-								float leaf	);
+								RegisterParameter &para );
 	
 
 

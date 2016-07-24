@@ -234,13 +234,13 @@ Matrix4f Registration(	PointCloudNT::Ptr &model,
 	return inverse * transformation_ransac;
 }
 
-Matrix4f RegistrationNoShow(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCloudNT::Ptr &model_align, float leaf) {
+Matrix4f RegistrationNoShow(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCloudNT::Ptr &model_align, RegisterParameter &para) {
 	// Point cloud
 	FeatureCloudT::Ptr model_features(new FeatureCloudT);
 	FeatureCloudT::Ptr mesh_features(new FeatureCloudT);
 	Matrix4f transformation_ransac = Matrix4f::Identity();
 	Matrix4f transformation_icp = Matrix4f::Identity();
-	//const float leaf = 0.005f; 
+	const float leaf = para.leaf; 
 	{
 		pcl::ScopeTime t("[Downsample]");
 
@@ -275,13 +275,12 @@ Matrix4f RegistrationNoShow(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, P
 	ransac.setSourceFeatures(model_features);
 	ransac.setInputTarget(mesh);
 	ransac.setTargetFeatures(mesh_features);
-	ransac.setMaximumIterations(50000); // Number of RANSAC iterations
-	ransac.setNumberOfSamples(5); // Number of points to sample for generating/prerejecting a pose
-	ransac.setCorrespondenceRandomness(5); // Number of nearest features to use
-	ransac.setSimilarityThreshold(0.7f); // Polygonal edge length similarity threshold
-	ransac.setMaxCorrespondenceDistance(2.5f * leaf); // Inlier threshold
-	// ransac.setInlierFraction(0.25f); // Required inlier fraction for accepting a pose hypothesis
-	ransac.setInlierFraction(0.2f);
+	ransac.setMaximumIterations(para.MaximumIterationsRANSAC); // Number of RANSAC iterations
+	ransac.setNumberOfSamples(para.NumberOfSamples); // Number of points to sample for generating/prerejecting a pose
+	ransac.setCorrespondenceRandomness(para.CorrespondenceRandomness); // Number of nearest features to use
+	ransac.setSimilarityThreshold(para.SimilarityThreshold); // Polygonal edge length similarity threshold
+	ransac.setMaxCorrespondenceDistance(para.MaxCorrespondence * leaf); // Inlier threshold
+	ransac.setInlierFraction(para.InlierFraction); // Required inlier fraction for accepting a pose hypothesis
 	{
 		pcl::ScopeTime t("[RANSAC]");
 		ransac.align(*model_align);
