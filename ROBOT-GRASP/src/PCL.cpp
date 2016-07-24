@@ -125,13 +125,17 @@ void EstimateFPFH(PointCloudNT::Ptr &model, FeatureCloudT::Ptr &model_features, 
 *  @param model_align  output aligned model, which used to reflect to 2D
 *  @param showGraphic  show graphic result or not
 */
-Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCloudNT::Ptr &model_align, float leaf, bool showGraphic) {
+Matrix4f Registration(	PointCloudNT::Ptr &model, 
+						PointCloudNT::Ptr &mesh, 
+						PointCloudNT::Ptr &model_align, 
+						RegisterParameter &para,
+						bool showGraphic) {
 	// Point cloud
 	FeatureCloudT::Ptr model_features(new FeatureCloudT);
 	FeatureCloudT::Ptr mesh_features(new FeatureCloudT);
 	Matrix4f transformation_ransac = Matrix4f::Identity();
 	Matrix4f transformation_icp = Matrix4f::Identity();
-	//const float leaf = 0.005f; 
+	const float leaf = para.leaf; 
 
 	pcl::visualization::PCLVisualizer viewer("RANSAC-ICP");
 	{
@@ -177,12 +181,12 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	ransac.setSourceFeatures(model_features);
 	ransac.setInputTarget(mesh);
 	ransac.setTargetFeatures(mesh_features);
-	ransac.setMaximumIterations(50000); // Number of RANSAC iterations
-	ransac.setNumberOfSamples(4); // Number of points to sample for generating/prerejecting a pose
-	ransac.setCorrespondenceRandomness(5); // Number of nearest features to use
-	ransac.setSimilarityThreshold(0.9f); // Polygonal edge length similarity threshold
-	ransac.setMaxCorrespondenceDistance(2.5f * leaf); // Inlier threshold
-	ransac.setInlierFraction(0.25f); // Required inlier fraction for accepting a pose hypothesis
+	ransac.setMaximumIterations(para.MaximumIterationsRANSAC); // Number of RANSAC iterations
+	ransac.setNumberOfSamples(para.NumberOfSamples); // Number of points to sample for generating/prerejecting a pose
+	ransac.setCorrespondenceRandomness(para.CorrespondenceRandomness); // Number of nearest features to use
+	ransac.setSimilarityThreshold(para.SimilarityThreshold); // Polygonal edge length similarity threshold
+	ransac.setMaxCorrespondenceDistance(para.MaxCorrespondence * leaf); // Inlier threshold
+	ransac.setInlierFraction(para.InlierFraction); // Required inlier fraction for accepting a pose hypothesis
 	{
 		pcl::ScopeTime t("[RANSAC]");
 		ransac.align(*model_align);
@@ -196,17 +200,14 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	print4x4Matrix(transformation_ransac);
 	//If RANSAC success, then ICP
 	//ICP
-	int iterations = 100;
-	double EuclideanEpsilon = 2e-8;
-	int MaximumIterations = 1000;
 	pcl::IterativeClosestPoint<PointNT, PointNT> icp; //ICP algorithm
 	//icp.setInputSource(model_align);
 	//icp.setInputTarget(mesh);
 	icp.setInputSource(mesh);
 	icp.setInputTarget(model_align);
-	icp.setEuclideanFitnessEpsilon(EuclideanEpsilon);
-	icp.setMaximumIterations(MaximumIterations);
-	icp.setTransformationEpsilon(EuclideanEpsilon);
+	icp.setEuclideanFitnessEpsilon(para.EuclideanEpsilon);
+	icp.setMaximumIterations(para.MaximumIterationsICP);
+	icp.setTransformationEpsilon(para.EuclideanEpsilon);
 	{
 		pcl::ScopeTime t("[ICP]");
 		icp.align(*mesh);
@@ -222,9 +223,8 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	if (showGraphic) {
 		//Show graphic result
 		viewer.addPointCloud(mesh, ColorHandlerNT(mesh, 0.0, 255.0, 0.0), "mesh");
-		//viewer.addPointCloud(model, ColorHandlerNT(model, 0.0, 0.0, 255.0), "model");
+		viewer.addPointCloud(model, ColorHandlerNT(model, 0.0, 0.0, 255.0), "model");
 		viewer.addPointCloud(model_align, ColorHandlerNT(model_align, 0.0, .0, 255.0), "model_align");
-		
 		
 		//viewer.addPointCloud(grasp, ColorHandlerNT(grasp, 0.0, 255.0, 255.0), "grasp");
 		
@@ -276,11 +276,12 @@ Matrix4f RegistrationNoShow(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, P
 	ransac.setInputTarget(mesh);
 	ransac.setTargetFeatures(mesh_features);
 	ransac.setMaximumIterations(50000); // Number of RANSAC iterations
-	ransac.setNumberOfSamples(4); // Number of points to sample for generating/prerejecting a pose
+	ransac.setNumberOfSamples(5); // Number of points to sample for generating/prerejecting a pose
 	ransac.setCorrespondenceRandomness(5); // Number of nearest features to use
-	ransac.setSimilarityThreshold(0.9f); // Polygonal edge length similarity threshold
+	ransac.setSimilarityThreshold(0.7f); // Polygonal edge length similarity threshold
 	ransac.setMaxCorrespondenceDistance(2.5f * leaf); // Inlier threshold
-	ransac.setInlierFraction(0.25f); // Required inlier fraction for accepting a pose hypothesis
+	// ransac.setInlierFraction(0.25f); // Required inlier fraction for accepting a pose hypothesis
+	ransac.setInlierFraction(0.2f);
 	{
 		pcl::ScopeTime t("[RANSAC]");
 		ransac.align(*model_align);

@@ -82,7 +82,7 @@ vector<PXCPointF32> genRegistrationResult(	PXCProjection *projection,
 											Segmentation &myseg,
 											vector<PXCPoint3DF32> &vertices, 
 											double scale, 
-											float leaf)
+											RegisterParameter &para)
 {
 	//generate Point Cloud
 	PointCloudNT::Ptr mesh(new PointCloudNT);
@@ -91,7 +91,7 @@ vector<PXCPointF32> genRegistrationResult(	PXCProjection *projection,
 	size_t sz = PXC2PCL(myseg.mainRegions_[0], vertices, mesh, 1.0 / scale);
 	cout << "Generate Point Cloud: " << sz << endl;
 	//Alignment
-	Matrix4f transformation = Registration(model, mesh, model_align, leaf, true);
+	Matrix4f transformation = Registration(model, mesh, model_align, para, true);
 	if (transformation == Matrix4f::Identity()) //Alignment failed 
 		return{};
 	vector<PXCPoint3DF32> result;
@@ -110,7 +110,7 @@ Reflect_Result genRegistrationResult(	PXCProjection *projection,
 										PointSet &segment,
 										vector<PXCPoint3DF32> &vertices,
 										double scale,
-										float leaf)
+										RegisterParameter &para)
 {
 	//generate Point Cloud
 	PointCloudNT::Ptr mesh(new PointCloudNT);
@@ -122,7 +122,11 @@ Reflect_Result genRegistrationResult(	PXCProjection *projection,
 	
 	//Matrix4f transformation = Registration(model, mesh, model_align, leaf, true);
 	
-	Matrix4f transformation = RegistrationNoShow(model, mesh, model_align, leaf);
+
+	/** TODO
+	*/
+	Matrix4f transformation = Registration(model, mesh, model_align, para);
+	//Matrix4f transformation = RegistrationNoShow(model, mesh, model_align, leaf);
 	
 	if (transformation == Matrix4f::Identity()) //Alignment failed 
 		return{};
@@ -167,13 +171,13 @@ void Reflect(	long framecnt,
 				PointSet &segment,
 				vector<PXCPoint3DF32> &vertices,
 				double scale,
-				float leaf)
+				RegisterParameter &para)
 {
 	MESSAGE_COUT("[" << framecnt << "]", name);
 	Mat color = img.clone();
 	//vector<PXCPointF32> show2d = genRegistrationResult(projection_, model, myseg, vertices, PointCloudScale, leaf);
 	
-	Reflect_Result show2d = genRegistrationResult(projection, model, grasp, segment, vertices, scale, leaf);
+	Reflect_Result show2d = genRegistrationResult(projection, model, grasp, segment, vertices, scale, para);
 
 	if (!show2d.isEmpty()) {
 		showRegistrationResult(show2d.model, color, Vec3b(255, 0, 255));
@@ -551,7 +555,10 @@ int MyRealsense::captureDepthandSave()
 
 int MyRealsense::show(){ return -1; }
 
-int MyRealsense::testRegistration(const string model_path, const string grasp_path, double PointCloudScale)
+int MyRealsense::testRegistration(	const string model_path, 
+									const string grasp_path, 
+									double PointCloudScale,
+									RegisterParameter &para)
 {
 	//Define variable
 	Size showSize = { camera_.width / 2, camera_.height / 2 }; //segement and show size is the half of camera
@@ -562,13 +569,13 @@ int MyRealsense::testRegistration(const string model_path, const string grasp_pa
 	long framecnt;
 	int state = 0;
 	//Load 3D Model
-	const float leaf = 0.01f;
+	const float leaf = para.leaf;
 	PointCloudNT::Ptr model(new PointCloudNT);
 	LoadModel(model_path, model);
 	Downsample(model, leaf);
 	//Load grasping point region
 	PointCloudT::Ptr grasp(new PointCloudT);
-	loadGraspPcd(".\\model\\bottle\\bottle-grasp-scaled.pcd", grasp);
+	loadGraspPcd(grasp_path, grasp);
 	//Configure Segmentation
 	unsigned topk = 5;
 	short threshold = 3;
@@ -641,7 +648,7 @@ int MyRealsense::testRegistration(const string model_path, const string grasp_pa
 								myseg.mainRegions_[k],
 								vertices, 
 								PointCloudScale, 
-								leaf	);
+								para	);
 					t.detach();
 				}
 			//}

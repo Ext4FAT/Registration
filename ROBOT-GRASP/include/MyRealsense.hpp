@@ -3,6 +3,7 @@
 /************************************************************************/
 #include "Opencv.hpp"
 #include "FileOperation.hpp"
+#include "PCL.hpp"
 
 /************************************************************************/
 /* namespace pxc                                                        */
@@ -49,7 +50,10 @@ public:
 	*  @param model_path   which model to load (.pcd file format)
 	*  @param grasp_path   which model to load (.obj file format)
 	*/
-	int testRegistration(const string model_path, const string grasp_path, double PointCloudScale);
+	int testRegistration(	const string model_path, 
+							const string grasp_path, 
+							double PointCloudScale,
+							RegisterParameter &para	);
 	/**
 	*  @brief PXCImage2Mat: Convert RealSense's PXCImage to Opencv's Mat
 	*/
