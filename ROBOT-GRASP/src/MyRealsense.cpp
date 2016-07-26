@@ -190,7 +190,7 @@ bool Reflect(	long framecnt,
 				double scale,
 				RegisterParameter &para)
 {
-	MESSAGE_COUT("[" << filenames[framecnt] << "]", name);
+	MESSAGE_COUT("[" << framecnt << "]", name);
 	Mat color = img.clone();
 	//vector<PXCPointF32> show2d = genRegistrationResult(projection_, model, myseg, vertices, PointCloudScale, leaf);
 	
@@ -199,7 +199,7 @@ bool Reflect(	long framecnt,
 	if (!show2d.isEmpty()) {
 		Rect boundbox = myBoundBox(show2d.grasp);
 		rectangle(color, boundbox, 2);
-		result << framecnt << boundbox << endl;
+		result <<framecnt << "\t" << filenames[framecnt] << "\t" << boundbox << endl;
 
 		//rectangle(color, boundbox, Scalar(0, 0, 255), 2);
 		showRegistrationResult(show2d.model, color, Vec3b(255, 0, 255));
