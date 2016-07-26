@@ -55,6 +55,17 @@ public:
 							double PointCloudScale,
 							RegisterParameter &para	);
 	/**
+	*  @brief testDataSet: 
+	*  @param model_path   which model to load (.pcd file format)
+	*  @param grasp_path   which model to load (.obj file format)
+	*/
+	int testDataSet(	const string model_path,
+						const string grasp_path,
+						double PointCloudScale,
+						RegisterParameter &para,
+						string dir,
+						string categoryname);
+	/**
 	*  @brief PXCImage2Mat: Convert RealSense's PXCImage to Opencv's Mat
 	*/
 	cv::Mat PXCImage2Mat(PXCImage* pxc);
