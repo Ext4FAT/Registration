@@ -18,6 +18,24 @@ public:
 
 atomic_bool wait(false);
 
+ofstream result("res.txt");
+vector<string> filenames;
+static Rect range = { 0, 0, 640, 480 };
+
+Rect myBoundBox(vector<PXCPointF32> &pointset)
+{
+	//static Point extend(5, 5);
+	Point pmax(0, 0), pmin(0x7fffffff, 0x7fffffff);
+	for (auto p : pointset) {
+		if (p.x > pmax.x) pmax.x = p.x;
+		if (p.x < pmin.x) pmin.x = p.x;
+		if (p.y > pmax.y) pmax.y = p.y;
+		if (p.y < pmin.y) pmin.y = p.y;
+	}
+	return Rect(pmin, pmax) & range;
+}
+
+
 // Thread
 void myimshow(const string winname, Mat &img)
 {
@@ -161,8 +179,7 @@ void showRegistrationResult(vector<PXCPointF32> &show2d, Mat &img, Vec3b color)
 	imshow("reflect", img);
 }
 
-
-void Reflect(	long framecnt,
+bool Reflect(	long framecnt,
 				string name,
 				Mat& img,
 				PXCProjection *projection,
@@ -173,21 +190,28 @@ void Reflect(	long framecnt,
 				double scale,
 				RegisterParameter &para)
 {
-	MESSAGE_COUT("[" << framecnt << "]", name);
+	MESSAGE_COUT("[" << filenames[framecnt] << "]", name);
 	Mat color = img.clone();
 	//vector<PXCPointF32> show2d = genRegistrationResult(projection_, model, myseg, vertices, PointCloudScale, leaf);
 	
 	Reflect_Result show2d = genRegistrationResult(projection, model, grasp, segment, vertices, scale, para);
 
 	if (!show2d.isEmpty()) {
+		Rect boundbox = myBoundBox(show2d.grasp);
+		rectangle(color, boundbox, 2);
+		result << framecnt << boundbox << endl;
+
+		//rectangle(color, boundbox, Scalar(0, 0, 255), 2);
 		showRegistrationResult(show2d.model, color, Vec3b(255, 0, 255));
 		showRegistrationResult(show2d.grasp, color, Vec3b(0, 255, 255));
+		return true;
 		//if (waitKey(-1) == 27) {
 		//	wait = false;
 		//	return;
 		//}
 	}
 	wait = false;
+	return false;
 }
 
 
@@ -730,11 +754,10 @@ int MyRealsense::testDataSet(	const string model_path,
 	//Detect each video frame
 	placeWindows(topk);
 	//
-	vector<string> filenames = getCurdirFileName(dir + "\\" + categoryname);
+	filenames = getCurdirFileName(dir + "\\" + categoryname);
 	//
-	framecnt = 1;
+	framecnt = 0;
 	for (auto filename : filenames) {
-		framecnt++;
 		// Convert PXCImage to Opencv's Mat and show
 		string color_path = dir + "\\" + categoryname + "\\" + filename;
 		string depth_path = dir + "\\depth\\" + filename;
@@ -776,34 +799,45 @@ int MyRealsense::testDataSet(	const string model_path,
 			//int predict = hog_svm.predict(region);
 			//if (predict > 0) {
 			//	string name = hog_svm.getCategoryName(predict);
-			string name = "bottle";
+			string name = categoryname;
 			rectangle(color2, boundbox, Scalar(0, 0, 255), 2);
 			drawText(color2, boundbox, name);
 			//show point cloud
 			imshow("classification", color2);
 			imshow("point cloud", pointcloud);
 			//Registration
+			bool flag = Reflect(	framecnt,
+						name,
+						color,
+						projection_,
+						model,
+						grasp,
+						myseg.mainRegions_[k],
+						vertices,
+						PointCloudScale,
+						para);
 			//if (waitKey(1) == ' ') {
-			if (!wait) {
-				wait = true;
-				thread t(Reflect,
-					framecnt,
-					name,
-					color,
-					projection_,
-					model,
-					grasp,
-					myseg.mainRegions_[k],
-					vertices,
-					PointCloudScale,
-					para);
-				t.detach();
-			}
+			//if (!wait) {
+			//	wait = true;
+			//	thread t(Reflect,
+			//		framecnt,
+			//		name,
+			//		color,
+			//		projection_,
+			//		model,
+			//		grasp,
+			//		myseg.mainRegions_[k],
+			//		vertices,
+			//		PointCloudScale,
+			//		para);
+			//	t.detach();
+			//}
 			//}
 			k++;
 			if (k > 0)
 				break;
 		}
+		framecnt++;
 
 		//for (int k = 0; k < topk; k++){
 		//	if (0 < hog_svm.predict(color2(myseg.boundBoxes_[k]))) {
