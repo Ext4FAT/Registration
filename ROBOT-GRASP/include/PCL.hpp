@@ -121,6 +121,11 @@ Matrix4f RegistrationNoShow(	PointCloudNT::Ptr &model,
 								PointCloudNT::Ptr &mesh,
 								PointCloudNT::Ptr &model_align,
 								RegisterParameter &para );
+
+Matrix4f RegistrationNoShow_ICP(	PointCloudNT::Ptr &model,
+									PointCloudNT::Ptr &mesh,
+									PointCloudNT::Ptr &model_align,
+									RegisterParameter &para);
 	
 
 

@@ -143,7 +143,9 @@ Reflect_Result genRegistrationResult(	PXCProjection *projection,
 
 	/** TODO
 	*/
+	
 	Matrix4f transformation = RegistrationNoShow(model, mesh, model_align, para);
+	//Matrix4f transformation = RegistrationNoShow(model, mesh, model_align, para);
 	//Matrix4f transformation = RegistrationNoShow(model, mesh, model_align, leaf);
 	
 	if (transformation == Matrix4f::Identity()) //Alignment failed 
@@ -834,7 +836,7 @@ int MyRealsense::testDataSet(	const string model_path,
 			//}
 			//}
 			k++;
-			if (k > 0)
+			if (k > 2)
 				break;
 		}
 		framecnt++;

@@ -6,12 +6,11 @@ int main(int argc, char** argv)
 	MESSAGE_COUT("USAGE", "\tROBOR-GRASP [Scale] [Model Path]");
 	string save_dir_path = ".\\";
 	double scale = argc > 1 ? atof(argv[1]) : 400.0;
-	string model_path = argc > 2 ? argv[2] : ".\\model\\bottle\\bottle.pcd";
-	string grasp_path = argc > 3 ? argv[3] : ".\\model\\bottle\\bottle-grasp-scaled.pcd";
-	
-	string dir = "C:\\Users\\IDLER\\Desktop\\DATASET\\DataSet";
-	string categoryname = "bottle2";
-
+	//string categoryname = "bottle2";
+	string categoryname = argc > 2 ? argv[2] : "bottle" ;
+	string model_path = ".\\model\\" + categoryname + "\\" + categoryname + "-scaled.pcd";
+	string grasp_path = ".\\model\\" + categoryname + "\\" + categoryname + "-grasp-scaled.pcd";
+	string dir = argc > 3 ? argv[3] : "C:\\Users\\IDLER\\Desktop\\DATASET\\DataSet";
 	//Parameter
 	RegisterParameter para;
 	if (argc > 4)
@@ -26,10 +25,6 @@ int main(int argc, char** argv)
 		para.MaxCorrespondence = atof(argv[8]);
 	if (argc > 9)
 		para.InlierFraction = atof(argv[9]);
-
-	if (argc > 10)
-		categoryname = argv[10];
-	
 	//F200
 	MyRealsense robot(save_dir_path, 640, 480, 30);
 
