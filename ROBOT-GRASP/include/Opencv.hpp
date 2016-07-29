@@ -1,3 +1,4 @@
+#pragma once
 /************************************************************************/
 /* namespace std                                                        */
 /************************************************************************/
@@ -30,3 +31,11 @@ using cv::rectangle;
 typedef std::vector<cv::Point> PointSet;
 typedef std::vector<PointSet> SegmentSet;
 //typedef std::vector<PointSet> ConvexHullSet;
+
+
+// replace imshow to imwrite
+namespace MYCUSTOM{
+	static int mynumber = 0;
+}
+
+//#define imshow(_W_, _M_) imwrite(to_string(MYCUSTOM::mynumber)+_W_+std::string(".png"), _M_)

@@ -25,12 +25,21 @@ int main(int argc, char** argv)
 		para.MaxCorrespondence = atof(argv[8]);
 	if (argc > 9)
 		para.InlierFraction = atof(argv[9]);
+	int from = 0;
+	if (argc > 10)
+		from = atoi(argv[10]);
+
+
 	//F200
 	MyRealsense robot(save_dir_path, 640, 480, 30);
 
 	//robot.testRegistration(model_path, grasp_path, scale, para);
-
-	robot.testDataSet(model_path, grasp_path, scale, para, dir, categoryname);
-
+	vector<string> categorynames = {"can" };
+	vector<int> seg_index = { 0 };
+	for (int i = 0; i < categorynames.size(); i++) {
+		string model_path = ".\\model\\" + categorynames[i] + "\\" + categorynames[i] + "-scaled.pcd";
+		string grasp_path = ".\\model\\" + categorynames[i] + "\\" + categorynames[i] + "-grasp-scaled.pcd";
+		robot.testDataSet(model_path, grasp_path, scale, para, dir, categorynames[i], from, 0, seg_index[i]);
+	}
 	return 0;
 }

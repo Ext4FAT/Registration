@@ -288,7 +288,7 @@ Matrix4f RegistrationNoShow(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, P
 	transformation_ransac = ransac.getFinalTransformation();
 	if (!ransac.hasConverged()) {
 		pcl::console::print_error("RANSAC alignment failed!\n");
-		return transformation_ransac;
+		// return transformation_ransac;
 	}
 	print4x4Matrix(transformation_ransac);
 	//If RANSAC success, then ICP

@@ -18,7 +18,7 @@ public:
 
 atomic_bool wait(false);
 
-ofstream result("res.txt");
+ofstream result;
 vector<string> filenames;
 static Rect range = { 0, 0, 640, 480 };
 
@@ -128,7 +128,8 @@ Reflect_Result genRegistrationResult(	PXCProjection *projection,
 										PointSet &segment,
 										vector<PXCPoint3DF32> &vertices,
 										double scale,
-										RegisterParameter &para)
+										RegisterParameter &para,
+										int method = 0)
 {
 	//generate Point Cloud
 	PointCloudNT::Ptr mesh(new PointCloudNT);
@@ -144,7 +145,12 @@ Reflect_Result genRegistrationResult(	PXCProjection *projection,
 	/** TODO
 	*/
 	
-	Matrix4f transformation = RegistrationNoShow(model, mesh, model_align, para);
+	Matrix4f transformation;
+	if (method)
+		transformation = RegistrationNoShow(model, mesh, model_align, para);
+	else {
+		transformation = RegistrationNoShow_ICP(model, mesh, model_align, para);
+	}
 	//Matrix4f transformation = RegistrationNoShow(model, mesh, model_align, para);
 	//Matrix4f transformation = RegistrationNoShow(model, mesh, model_align, leaf);
 	
@@ -200,7 +206,7 @@ bool Reflect(	long framecnt,
 
 	if (!show2d.isEmpty()) {
 		Rect boundbox = myBoundBox(show2d.grasp);
-		rectangle(color, boundbox, 2);
+		rectangle(color, boundbox, Scalar(255, 0, 0), 2);
 		result <<framecnt << "\t" << filenames[framecnt] << "\t" << boundbox << endl;
 
 		//rectangle(color, boundbox, Scalar(0, 0, 255), 2);
@@ -227,6 +233,8 @@ MyRealsense::MyRealsense(string& Dir, int width, int height, float fps)
 	camera_.height = height;
 	fps_ = fps;
 	wait_ = false;
+	//Configure RealSense
+	configRealsense();
 }
 
 //Convert RealSense's PXCImage to Opencv's Mat
@@ -722,7 +730,10 @@ int MyRealsense::testDataSet(	const string model_path,
 								double PointCloudScale,
 								RegisterParameter &para,
 								string dir,
-								string categoryname)
+								string categoryname,
+								int from,
+								int method,
+								int seg_index)
 {
 	//Define variable
 	Size showSize = { camera_.width / 2, camera_.height / 2 }; //segement and show size is the half of camera
@@ -748,9 +759,6 @@ int MyRealsense::testDataSet(	const string model_path,
 	HOG_SVM hog_svm(".\\classification\\HOG-SVM-MODEL.xml");
 	vector<string> names = hog_svm.getSubdirName(".\\classification");
 	hog_svm.getCategory(names);
-	//Configure RealSense
-	if ((state = configRealsense()) < 0)
-		return state;
 	//Configure Draw Point Cloud
 	DrawWorld dw(pxcsession_, camera_);
 	//Detect each video frame
@@ -759,7 +767,12 @@ int MyRealsense::testDataSet(	const string model_path,
 	filenames = getCurdirFileName(dir + "\\" + categoryname);
 	//
 	framecnt = 0;
+	result.open(categoryname + ".txt");
 	for (auto filename : filenames) {
+		if (framecnt < from) {
+			framecnt++;
+			continue;
+		}
 		// Convert PXCImage to Opencv's Mat and show
 		string color_path = dir + "\\" + categoryname + "\\" + filename;
 		string depth_path = dir + "\\depth\\" + filename;
@@ -836,10 +849,13 @@ int MyRealsense::testDataSet(	const string model_path,
 			//}
 			//}
 			k++;
-			if (k > 2)
+			//if (k > 1)
+			if (k > seg_index)
 				break;
 		}
 		framecnt++;
+
+		MYCUSTOM::mynumber++;
 
 		//for (int k = 0; k < topk; k++){
 		//	if (0 < hog_svm.predict(color2(myseg.boundBoxes_[k]))) {
@@ -870,12 +886,12 @@ int MyRealsense::testDataSet(	const string model_path,
 			waitKey(-1);
 		myseg.clear();
 		pxcdepth->Release();
-		pxcsm_->ReleaseFrame();
+		//pxcsm_->ReleaseFrame();
 	}
-	projection_->Release();
-	pxcdev_->Release();
-	pxcsm_->Release();
-	pxcsession_->Release();
+	//projection_->Release();
+	//pxcdev_->Release();
+	//pxcsm_->Release();
+	//pxcsession_->Release();
 	return 1;
 
 }

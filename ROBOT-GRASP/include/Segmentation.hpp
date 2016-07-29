@@ -3,7 +3,6 @@
 /************************************************************************/
 #include "Opencv.hpp"
 #include "MyDraw.hpp"
-//#define imshow(_W_, _M_) imwrite(_W_+std::string(".png"), _M_)
 
 /************************************************************************/
 /* Improved region-growing segmentation                                 */

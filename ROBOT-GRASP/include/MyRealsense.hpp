@@ -64,7 +64,10 @@ public:
 						double PointCloudScale,
 						RegisterParameter &para,
 						string dir,
-						string categoryname);
+						string categoryname,
+						int from,
+						int method,
+						int seg_index);
 	/**
 	*  @brief PXCImage2Mat: Convert RealSense's PXCImage to Opencv's Mat
 	*/
