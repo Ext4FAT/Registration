@@ -5,6 +5,8 @@
 #include "HOG-SVM.hpp"
 #include "MyRealsense.hpp"
 
+#include "Validation.hpp"
+
 typedef vector<PXCPointF32> PXC2DPointSet;
 class Reflect_Result {
 public:
@@ -196,13 +198,14 @@ bool Reflect(	long framecnt,
 				PointSet &segment,
 				vector<PXCPoint3DF32> &vertices,
 				double scale,
-				RegisterParameter &para)
+				RegisterParameter &para,
+				int method)
 {
 	MESSAGE_COUT("[" << framecnt << "]", name);
 	Mat color = img.clone();
 	//vector<PXCPointF32> show2d = genRegistrationResult(projection_, model, myseg, vertices, PointCloudScale, leaf);
 	
-	Reflect_Result show2d = genRegistrationResult(projection, model, grasp, segment, vertices, scale, para);
+	Reflect_Result show2d = genRegistrationResult(projection, model, grasp, segment, vertices, scale, para, method);
 
 	if (!show2d.isEmpty()) {
 		Rect boundbox = myBoundBox(show2d.grasp);
@@ -680,7 +683,8 @@ int MyRealsense::testRegistration(	const string model_path,
 								myseg.mainRegions_[k],
 								vertices, 
 								PointCloudScale, 
-								para	);
+								para,
+								1);
 					t.detach();
 				}
 			//}
@@ -764,10 +768,13 @@ int MyRealsense::testDataSet(	const string model_path,
 	//Detect each video frame
 	placeWindows(topk);
 	//
-	filenames = getCurdirFileName(dir + "\\" + categoryname);
-	//
+	readFromCSV(categoryname, ".\\res\\" + categoryname + ".csv", filenames);
+	//filenames = getCurdirFileName(dir + "\\" + categoryname);
 	framecnt = 0;
-	result.open(categoryname + ".txt");
+	if (method)
+		result.open(categoryname + ".txt");
+	else
+		result.open("ICP-" + categoryname + ".txt");
 	for (auto filename : filenames) {
 		if (framecnt < from) {
 			framecnt++;
@@ -830,7 +837,8 @@ int MyRealsense::testDataSet(	const string model_path,
 						myseg.mainRegions_[k],
 						vertices,
 						PointCloudScale,
-						para);
+						para,
+						method);
 			//if (waitKey(1) == ' ') {
 			//if (!wait) {
 			//	wait = true;
@@ -897,6 +905,45 @@ int MyRealsense::testDataSet(	const string model_path,
 }
 
 
+
+int MyRealsense::testFromValidDataSet(	const string model_path,
+										const string grasp_path,
+										double PointCloudScale,
+										RegisterParameter &para,
+										string dir,
+										string categoryname,
+										string csvname) 
+{
+	//Define variable
+	Size showSize = { camera_.width / 2, camera_.height / 2 }; //segement and show size is the half of camera
+	Mat color, depth, pointcloud;
+	vector<PXCPoint3DF32> vertices(camera_.height*camera_.width);
+	//PXCCapture::Sample *sample;
+	//PXCImage *pxcdepth, *pxccolor;
+	long framecnt;
+	int state = 0;
+	//Load 3D Model
+	const float leaf = para.leaf;
+	PointCloudNT::Ptr model(new PointCloudNT);
+	LoadModel(model_path, model);
+	Downsample(model, leaf);
+	//Load grasping point region
+	PointCloudT::Ptr grasp(new PointCloudT);
+	loadGraspPcd(grasp_path, grasp);
+	//Configure Segmentation
+	unsigned topk = 5;
+	short threshold = 3;
+	Segmentation myseg(showSize.width, showSize.height, topk, threshold);
+	//Configure HOG-SVM
+	HOG_SVM hog_svm(".\\classification\\HOG-SVM-MODEL.xml");
+	vector<string> names = hog_svm.getSubdirName(".\\classification");
+	hog_svm.getCategory(names);
+	//Configure Draw Point Cloud
+	DrawWorld dw(pxcsession_, camera_);
+	//Detect each video frame
+	placeWindows(topk);
+	return 1;
+}
 
 
 

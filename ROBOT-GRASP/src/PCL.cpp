@@ -6,6 +6,8 @@
 #include <pcl/io/obj_io.h>
 #include <pcl/registration/icp.h>
 #include <pcl/registration/sample_consensus_prerejective.h>
+#include <pcl/registration/ia_ransac.h>
+#include <pcl/registration/joint_icp.h>
 
 
 /************************************************************************/
@@ -271,6 +273,7 @@ Matrix4f RegistrationNoShow(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, P
 	}
 	// RANSAC
 	pcl::SampleConsensusPrerejective <PointNT, PointNT, FeatureT> ransac;
+	//pcl::SampleConsensusInitialAlignment <PointNT, PointNT, FeatureT> ransac;
 	ransac.setInputSource(model);
 	ransac.setSourceFeatures(model_features);
 	ransac.setInputTarget(mesh);
@@ -380,3 +383,9 @@ Matrix4f RegistrationNoShow_ICP(	PointCloudNT::Ptr &model,
 
 	return inverse * transformation_ransac;
 }
+
+
+
+
+
+
