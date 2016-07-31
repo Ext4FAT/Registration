@@ -137,6 +137,14 @@ public:
 	/**
 	* @brief get members const
 	*/
+	string getCategoryName(int index) {
+		return catergory_.index2name[index];
+	}
+	int getCategoryIndex(string name) {
+		if (catergory_.name2index.find(name) != catergory_.name2index.end())
+			return catergory_.name2index[name];
+		return -1;
+	}
 	const Category& category(){
 		return catergory_;
 	}

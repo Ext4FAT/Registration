@@ -3,6 +3,7 @@
 /************************************************************************/
 #include "Opencv.hpp"
 #include "FileOperation.hpp"
+#include "PCL.hpp"
 
 /************************************************************************/
 /* namespace pxc                                                        */
@@ -11,6 +12,12 @@
 #include <pxcsession.h>
 #include <pxcsensemanager.h>
 #include <pxcprojection.h>
+
+//thread
+#include <thread>
+#include <boost\atomic.hpp>
+using boost::atomic_bool;
+using std::thread;
 
 /*******************************************************************************
 *   Realsense Operation.													   *
@@ -40,9 +47,44 @@ public:
 	int show();
 	/**
 	*  @brief testRegistration: End-TO-End Test RANSAC+ICP
-	*  @param model_path   which model to load (.pcd file format)
+	*  @param model_path		which model to load (.pcd file format)
+	*  @param grasp_path		which model to load (.obj file format)
+	*  @param PointCloudScale	
 	*/
-	int testRegistration(const string model_path, double PointCloudScale);
+	int testRegistration(	const string model_path, 
+							const string grasp_path, 
+							double PointCloudScale,
+							RegisterParameter &para	);
+	/**
+	*  @brief testDataSet: 
+	*  @param model_path   which model to load (.pcd file format)
+	*  @param grasp_path   which model to load (.obj file format)
+	*/
+	int testDataSet(	const string model_path,
+						const string grasp_path,
+						double PointCloudScale,
+						RegisterParameter &para,
+						string dir,
+						string categoryname,
+						int from,
+						int method,
+						int seg_index);
+	/**
+	*  @brief testDataSet:
+	*  @param model_path   which model to load (.pcd file format)
+	*  @param grasp_path   which model to load (.obj file format)
+	*/
+	int testFromValidDataSet(	const string model_path,
+								const string grasp_path,
+								double PointCloudScale,
+								RegisterParameter &para,
+								string dir,
+								string categoryname,
+								string csvname);
+
+
+
+
 	/**
 	*  @brief PXCImage2Mat: Convert RealSense's PXCImage to Opencv's Mat
 	*/
@@ -50,7 +92,7 @@ public:
 private:
 	int captureDepthandSave();
 	string getSavePath(const string dir, time_t slot, long framecnt);
-	int outputPCD(const string filename, PointSet &pSet, vector<PXCPoint3DF32> &vertices);
+	int savePCD(const string filename, PointSet &pSet, vector<PXCPoint3DF32> &vertices);
 
 private:
 	// DataAcquire Setting
@@ -64,4 +106,7 @@ private:
 	PXCProjection *projection_ = 0;
 	PXCSizeI32 camera_;
 	pxcF32 fps_;
+	// Concurrent
+	atomic_bool wait_;
+
 };

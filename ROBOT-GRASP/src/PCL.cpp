@@ -3,8 +3,11 @@
 #include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/io/obj_io.h>
 #include <pcl/registration/icp.h>
 #include <pcl/registration/sample_consensus_prerejective.h>
+#include <pcl/registration/ia_ransac.h>
+#include <pcl/registration/joint_icp.h>
 
 
 /************************************************************************/
@@ -37,10 +40,34 @@ bool  LoadModel(const string model_path, PointCloudNT::Ptr &model) //Normal
 /************************************************************************/
 /* Load grasping region point cloud                                     */
 /************************************************************************/
-int loadGrasp(const string model_path, PointCloudT::Ptr &grasp)
+bool loadGraspPcd(const string model_path, PointCloudT::Ptr &grasp)
+{
+	pcl::ScopeTime t("[Load grasping point regions]");
+	if (pcl::io::loadPCDFile<PointT>(model_path, *grasp) < 0) {
+		pcl::console::print_error("Error loading object file!\n");
+		return false;
+	}
+	return true;
+}
+bool loadGraspPcd(const string model_path, PointCloudNT::Ptr &grasp)
+{
+	pcl::ScopeTime t("[Load grasping point regions]");
+	if (pcl::io::loadPCDFile<PointNT>(model_path, *grasp) < 0) {
+		pcl::console::print_error("Error loading object file!\n");
+		return false;
+	}
+	return true;
+}
+
+bool loadGrasp(const string model_path, PointCloudT::Ptr &grasp)
 {
 	//TODO
-	return 0;
+	pcl::ScopeTime t("[Load grasping point regions]");
+	if (pcl::io::loadOBJFile<PointT>(model_path, *grasp) < 0) {
+		pcl::console::print_error("Error loading object file!\n");
+		return false;
+	}
+	return true;
 }
 
 /************************************************************************/
@@ -69,6 +96,16 @@ void Downsample(PointCloudNT::Ptr &model, float leaf)
 }
 
 /************************************************************************/
+/* Estimate model curvatures                                            */
+/************************************************************************/
+void EstimateCurvatures(PointCloudNT::Ptr &model, float radius)
+{
+	pcl::PrincipalCurvaturesEstimation<PointNT, pcl::Normal, pcl::PrincipalCurvatures> principalCurvaturesEstimation;
+	principalCurvaturesEstimation.setInputCloud(model);
+
+}
+
+/************************************************************************/
 /* Estimate FPFH features                                               */
 /************************************************************************/
 void EstimateFPFH(PointCloudNT::Ptr &model, FeatureCloudT::Ptr &model_features, float leaf)
@@ -90,15 +127,18 @@ void EstimateFPFH(PointCloudNT::Ptr &model, FeatureCloudT::Ptr &model_features, 
 *  @param model_align  output aligned model, which used to reflect to 2D
 *  @param showGraphic  show graphic result or not
 */
-Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCloudNT::Ptr &model_align, float leaf, bool showGraphic) {
+Matrix4f Registration(	PointCloudNT::Ptr &model, 
+						PointCloudNT::Ptr &mesh, 
+						PointCloudNT::Ptr &model_align, 
+						RegisterParameter &para,
+						bool showGraphic) {
 	// Point cloud
 	FeatureCloudT::Ptr model_features(new FeatureCloudT);
 	FeatureCloudT::Ptr mesh_features(new FeatureCloudT);
 	Matrix4f transformation_ransac = Matrix4f::Identity();
 	Matrix4f transformation_icp = Matrix4f::Identity();
-	//const float leaf = 0.005f; 
+	const float leaf = para.leaf; 
 
-	//
 	pcl::visualization::PCLVisualizer viewer("RANSAC-ICP");
 	{
 		pcl::ScopeTime t("[Add init position]");
@@ -119,8 +159,7 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	}
 	{
 		pcl::ScopeTime t("[Estimate normals for mesh]");
-
-		pcl::NormalEstimationOMP <PointNT, PointNT> nest;
+		NormalEstimationNT nest;
 		nest.setRadiusSearch(leaf);
 		nest.setInputCloud(mesh);
 		nest.compute(*mesh);
@@ -144,12 +183,12 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	ransac.setSourceFeatures(model_features);
 	ransac.setInputTarget(mesh);
 	ransac.setTargetFeatures(mesh_features);
-	ransac.setMaximumIterations(50000); // Number of RANSAC iterations
-	ransac.setNumberOfSamples(4); // Number of points to sample for generating/prerejecting a pose
-	ransac.setCorrespondenceRandomness(5); // Number of nearest features to use
-	ransac.setSimilarityThreshold(0.9f); // Polygonal edge length similarity threshold
-	ransac.setMaxCorrespondenceDistance(2.5f * leaf); // Inlier threshold
-	ransac.setInlierFraction(0.25f); // Required inlier fraction for accepting a pose hypothesis
+	ransac.setMaximumIterations(para.MaximumIterationsRANSAC); // Number of RANSAC iterations
+	ransac.setNumberOfSamples(para.NumberOfSamples); // Number of points to sample for generating/prerejecting a pose
+	ransac.setCorrespondenceRandomness(para.CorrespondenceRandomness); // Number of nearest features to use
+	ransac.setSimilarityThreshold(para.SimilarityThreshold); // Polygonal edge length similarity threshold
+	ransac.setMaxCorrespondenceDistance(para.MaxCorrespondence * leaf); // Inlier threshold
+	ransac.setInlierFraction(para.InlierFraction); // Required inlier fraction for accepting a pose hypothesis
 	{
 		pcl::ScopeTime t("[RANSAC]");
 		ransac.align(*model_align);
@@ -159,6 +198,100 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 		pcl::console::print_error("RANSAC alignment failed!\n");
 		viewer.close();
 		return transformation_ransac;
+	}
+	print4x4Matrix(transformation_ransac);
+	//If RANSAC success, then ICP
+	//ICP
+	pcl::IterativeClosestPoint<PointNT, PointNT> icp; //ICP algorithm
+	//icp.setInputSource(model_align);
+	//icp.setInputTarget(mesh);
+	icp.setInputSource(mesh);
+	icp.setInputTarget(model_align);
+	icp.setEuclideanFitnessEpsilon(para.EuclideanEpsilon);
+	icp.setMaximumIterations(para.MaximumIterationsICP);
+	icp.setTransformationEpsilon(para.EuclideanEpsilon);
+	{
+		pcl::ScopeTime t("[ICP]");
+		icp.align(*mesh);
+	}
+	transformation_icp = icp.getFinalTransformation();
+	print4x4Matrix(transformation_icp);
+	//trans model with inverse matrix
+	//Eigen::Matrix4f inverse = transformation_icp.inverse() * transformation;
+	Eigen::Matrix4f inverse = transformation_icp.inverse();
+	pcl::transformPointCloud(*model_align, *model_align, inverse);
+
+	//pcl::transformPointCloud(*model, *model, inverse);
+	if (showGraphic) {
+		//Show graphic result
+		viewer.addPointCloud(mesh, ColorHandlerNT(mesh, 0.0, 255.0, 0.0), "mesh");
+		viewer.addPointCloud(model, ColorHandlerNT(model, 0.0, 0.0, 255.0), "model");
+		viewer.addPointCloud(model_align, ColorHandlerNT(model_align, 0.0, .0, 255.0), "model_align");
+		
+		//viewer.addPointCloud(grasp, ColorHandlerNT(grasp, 0.0, 255.0, 255.0), "grasp");
+		
+		viewer.spin();
+	}
+	viewer.close();
+	return inverse * transformation_ransac;
+}
+
+Matrix4f RegistrationNoShow(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCloudNT::Ptr &model_align, RegisterParameter &para) {
+	// Point cloud
+	FeatureCloudT::Ptr model_features(new FeatureCloudT);
+	FeatureCloudT::Ptr mesh_features(new FeatureCloudT);
+	Matrix4f transformation_ransac = Matrix4f::Identity();
+	Matrix4f transformation_icp = Matrix4f::Identity();
+	const float leaf = para.leaf; 
+	{
+		pcl::ScopeTime t("[Downsample]");
+
+		pcl::VoxelGrid <PointNT> grid;
+		grid.setLeafSize(leaf, leaf, leaf);
+		//grid.setInputCloud(model);
+		//grid.filter(*model);
+		grid.setInputCloud(mesh);
+		grid.filter(*mesh);
+	}
+	{
+		pcl::ScopeTime t("[Estimate normals for mesh]");
+		NormalEstimationNT nest;
+		nest.setRadiusSearch(leaf);
+		nest.setInputCloud(mesh);
+		nest.compute(*mesh);
+	}
+	{
+		pcl::ScopeTime t("[Estimate features]");
+		FeatureEstimationT fest;
+		fest.setRadiusSearch(5 * leaf);
+		fest.setInputCloud(model);
+		fest.setInputNormals(model);
+		fest.compute(*model_features);
+		fest.setInputCloud(mesh);
+		fest.setInputNormals(mesh);
+		fest.compute(*mesh_features);
+	}
+	// RANSAC
+	pcl::SampleConsensusPrerejective <PointNT, PointNT, FeatureT> ransac;
+	//pcl::SampleConsensusInitialAlignment <PointNT, PointNT, FeatureT> ransac;
+	ransac.setInputSource(model);
+	ransac.setSourceFeatures(model_features);
+	ransac.setInputTarget(mesh);
+	ransac.setTargetFeatures(mesh_features);
+	ransac.setMaximumIterations(para.MaximumIterationsRANSAC); // Number of RANSAC iterations
+	ransac.setNumberOfSamples(para.NumberOfSamples); // Number of points to sample for generating/prerejecting a pose
+	ransac.setCorrespondenceRandomness(para.CorrespondenceRandomness); // Number of nearest features to use
+	ransac.setSimilarityThreshold(para.SimilarityThreshold); // Polygonal edge length similarity threshold
+	ransac.setMaxCorrespondenceDistance(para.MaxCorrespondence * leaf); // Inlier threshold
+	ransac.setInlierFraction(para.InlierFraction); // Required inlier fraction for accepting a pose hypothesis
+	{
+		pcl::ScopeTime t("[RANSAC]");
+		ransac.align(*model_align);
+	}
+	transformation_ransac = ransac.getFinalTransformation();
+	if (!ransac.hasConverged()) {
+		pcl::console::print_error("RANSAC alignment failed!\n");
+		// return transformation_ransac;
 	}
 	print4x4Matrix(transformation_ransac);
 	//If RANSAC success, then ICP
@@ -180,18 +313,79 @@ Matrix4f Registration(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, PointCl
 	}
 	transformation_icp = icp.getFinalTransformation();
 	print4x4Matrix(transformation_icp);
-	//trans model with inverse matrix
-	//Eigen::Matrix4f inverse = transformation_icp.inverse() * transformation;
 	Eigen::Matrix4f inverse = transformation_icp.inverse();
 	pcl::transformPointCloud(*model_align, *model_align, inverse);
-	//pcl::transformPointCloud(*model, *model, inverse);
-	if (showGraphic) {
-		//Show graphic result
-		viewer.addPointCloud(mesh, ColorHandlerNT(mesh, 0.0, 255.0, 0.0), "mesh");
-		//viewer.addPointCloud(model, ColorHandlerNT(model, 0.0, 0.0, 255.0), "model");
-		viewer.addPointCloud(model_align, ColorHandlerNT(model_align, 0.0, .0, 255.0), "model_align");
-		viewer.spin();
-	}
-	viewer.close();
-	return transformation_icp * transformation_ransac;
+	
+	return inverse * transformation_ransac;
 }
+
+Matrix4f RegistrationNoShow_ICP(	PointCloudNT::Ptr &model, 
+									PointCloudNT::Ptr &mesh, 
+									PointCloudNT::Ptr &model_align, 
+									RegisterParameter &para) 
+{
+	// Point cloud
+	FeatureCloudT::Ptr model_features(new FeatureCloudT);
+	FeatureCloudT::Ptr mesh_features(new FeatureCloudT);
+	Matrix4f transformation_ransac = Matrix4f::Identity();
+	Matrix4f transformation_icp = Matrix4f::Identity();
+	const float leaf = para.leaf;
+	{
+		pcl::ScopeTime t("[Downsample]");
+
+		pcl::VoxelGrid <PointNT> grid;
+		grid.setLeafSize(leaf, leaf, leaf);
+		//grid.setInputCloud(model);
+		//grid.filter(*model);
+		grid.setInputCloud(mesh);
+		grid.filter(*mesh);
+	}
+	{
+		pcl::ScopeTime t("[Estimate normals for mesh]");
+		NormalEstimationNT nest;
+		nest.setRadiusSearch(leaf);
+		nest.setInputCloud(mesh);
+		nest.compute(*mesh);
+	}
+	{
+		pcl::ScopeTime t("[Estimate features]");
+		FeatureEstimationT fest;
+		fest.setRadiusSearch(5 * leaf);
+		fest.setInputCloud(model);
+		fest.setInputNormals(model);
+		fest.compute(*model_features);
+		fest.setInputCloud(mesh);
+		fest.setInputNormals(mesh);
+		fest.compute(*mesh_features);
+	}
+
+	//If RANSAC success, then ICP
+	//ICP
+	int iterations = 100;
+	double EuclideanEpsilon = 2e-8;
+	int MaximumIterations = 1000;
+	pcl::IterativeClosestPoint<PointNT, PointNT> icp; //ICP algorithm
+	//icp.setInputSource(model_align);
+	//icp.setInputTarget(mesh);
+	icp.setInputSource(mesh);
+	icp.setInputTarget(model);
+	icp.setEuclideanFitnessEpsilon(EuclideanEpsilon);
+	icp.setMaximumIterations(MaximumIterations);
+	icp.setTransformationEpsilon(EuclideanEpsilon);
+	{
+		pcl::ScopeTime t("[ICP]");
+		icp.align(*mesh);
+	}
+	transformation_icp = icp.getFinalTransformation();
+	print4x4Matrix(transformation_icp);
+	Eigen::Matrix4f inverse = transformation_icp.inverse();
+	pcl::transformPointCloud(*model_align, *model_align, inverse);
+
+	return inverse * transformation_ransac;
+}
+
+
+
+
+
+
