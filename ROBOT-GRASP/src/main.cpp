@@ -3,6 +3,14 @@
 
 int main(int argc, char** argv)
 {
+	map<int, METHOD> Int2Method;
+	Int2Method[0] = ICP_CLASSIC;
+	Int2Method[1] = ICP_NOLINEAR;
+	Int2Method[2] = ICP_WITHNORMLS;
+	Int2Method[3] = RANSACPLUSICP;
+	Int2Method[4] = SAC_IA;
+
+
 	MESSAGE_COUT("USAGE", "\tROBOR-GRASP [Scale] [Model Path]");
 	string save_dir_path = ".\\";
 	double scale = argc > 1 ? atof(argv[1]) : 400.0;
@@ -26,22 +34,26 @@ int main(int argc, char** argv)
 	if (argc > 9)
 		para.InlierFraction = atof(argv[9]);
 	int from = 0;
-	int method = 0;
 	if (argc > 10)
 		from = atoi(argv[10]);
 	if (argc > 11)
-		method = atoi(argv[11]);
+		para.Method = Int2Method[atoi(argv[11])];
 
 	//F200
 	MyRealsense robot(save_dir_path, 640, 480, 30);
 
 	//robot.testRegistration(model_path, grasp_path, scale, para);
-	vector<string> categorynames = {"teapot" };
-	vector<int> seg_index = { 1 };
+	
+	//vector<string> categorynames = {"bottle", "box", "can", "teacup", "teapot" };
+	//vector<int> seg_index = { 0, 1, 0, 0, 0 };
+	vector<string> categorynames = {"teacup", "teapot" };
+	vector<int> seg_index = { 0, 0 };
+
+
 	for (int i = 0; i < categorynames.size(); i++) {
 		string model_path = ".\\model\\" + categorynames[i] + "\\" + categorynames[i] + "-scaled.pcd";
 		string grasp_path = ".\\model\\" + categorynames[i] + "\\" + categorynames[i] + "-grasp-scaled.pcd";
-		robot.testDataSet(model_path, grasp_path, scale, para, dir, categorynames[i], from, method, seg_index[i]);
+		robot.testDataSet(model_path, grasp_path, scale, para, dir, categorynames[i], from, seg_index[i]);
 	}
 	return 0;
 }

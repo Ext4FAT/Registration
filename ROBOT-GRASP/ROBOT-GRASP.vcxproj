@@ -96,6 +96,7 @@
     <ClInclude Include="include\Opencv.hpp" />
     <ClInclude Include="include\PCL.hpp" />
     <ClInclude Include="include\Segmentation.hpp" />
+    <ClInclude Include="include\Validation.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

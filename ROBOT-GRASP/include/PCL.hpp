@@ -23,6 +23,21 @@
 
 using Eigen::Matrix4f;
 
+enum METHOD {
+	ICP_CLASSIC,
+	ICP_NOLINEAR,
+	ICP_WITHNORMLS,
+	RANSACPLUSICP,
+	SAC_IA
+};
+
+enum FEATYPE {
+	FPFH,
+	PFH,
+	VFH,
+	SIFT
+};
+
 struct RegisterParameter {
 	//Downsample
 	float leaf = 0.01f;
@@ -36,6 +51,9 @@ struct RegisterParameter {
 	//ICP
 	double EuclideanEpsilon = 2e-8;
 	int MaximumIterationsICP = 1000;
+	//Method
+	METHOD Method = ICP_NOLINEAR;
+	FEATYPE FeaType;
 };
 
 /************************************************************************/
