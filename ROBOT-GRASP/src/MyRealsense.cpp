@@ -20,7 +20,7 @@ public:
 
 atomic_bool wait(false);
 
-ofstream result;
+ofstream result_out;
 vector<string> filenames;
 static Rect range = { 0, 0, 640, 480 };
 
@@ -130,8 +130,7 @@ Reflect_Result genRegistrationResult(	PXCProjection *projection,
 										PointSet &segment,
 										vector<PXCPoint3DF32> &vertices,
 										double scale,
-										RegisterParameter &para,
-										int method = 0)
+										RegisterParameter &para)
 {
 	//generate Point Cloud
 	PointCloudNT::Ptr mesh(new PointCloudNT);
@@ -148,7 +147,7 @@ Reflect_Result genRegistrationResult(	PXCProjection *projection,
 	*/
 	
 	Matrix4f transformation;
-	if (method)
+	if (para.Method == RANSACPLUSICP)
 		transformation = RegistrationNoShow(model, mesh, model_align, para);
 	else {
 		transformation = RegistrationNoShow_ICP(model, mesh, model_align, para);
@@ -198,19 +197,18 @@ bool Reflect(	long framecnt,
 				PointSet &segment,
 				vector<PXCPoint3DF32> &vertices,
 				double scale,
-				RegisterParameter &para,
-				int method)
+				RegisterParameter &para)
 {
 	MESSAGE_COUT("[" << framecnt << "]", name);
 	Mat color = img.clone();
 	//vector<PXCPointF32> show2d = genRegistrationResult(projection_, model, myseg, vertices, PointCloudScale, leaf);
 	
-	Reflect_Result show2d = genRegistrationResult(projection, model, grasp, segment, vertices, scale, para, method);
+	Reflect_Result show2d = genRegistrationResult(projection, model, grasp, segment, vertices, scale, para);
 
 	if (!show2d.isEmpty()) {
 		Rect boundbox = myBoundBox(show2d.grasp);
 		rectangle(color, boundbox, Scalar(255, 0, 0), 2);
-		result <<framecnt << "\t" << filenames[framecnt] << "\t" << boundbox << endl;
+		result_out <<framecnt << "\t" << filenames[framecnt] << "\t" << boundbox << endl;
 
 		//rectangle(color, boundbox, Scalar(0, 0, 255), 2);
 		showRegistrationResult(show2d.model, color, Vec3b(255, 0, 255));
@@ -683,8 +681,7 @@ int MyRealsense::testRegistration(	const string model_path,
 								myseg.mainRegions_[k],
 								vertices, 
 								PointCloudScale, 
-								para,
-								1);
+								para);
 					t.detach();
 				}
 			//}
@@ -736,7 +733,6 @@ int MyRealsense::testDataSet(	const string model_path,
 								string dir,
 								string categoryname,
 								int from,
-								int method,
 								int seg_index)
 {
 	//Define variable
@@ -771,10 +767,16 @@ int MyRealsense::testDataSet(	const string model_path,
 	readFromCSV(categoryname, ".\\res\\" + categoryname + ".csv", filenames);
 	//filenames = getCurdirFileName(dir + "\\" + categoryname);
 	framecnt = 0;
-	if (method)
-		result.open(categoryname + ".txt");
-	else
-		result.open("ICP-" + categoryname + ".txt");
+
+	if (para.Method == RANSACPLUSICP)
+		result_out.open(categoryname + ".txt");
+	else if (para.Method == ICP_CLASSIC)
+		result_out.open("ICP-CLASSIC-" + categoryname + ".txt");
+	else if (para.Method == ICP_NOLINEAR)
+		result_out.open("ICP-NOLINEAR-" + categoryname + ".txt");
+	else if (para.Method == ICP_WITHNORMLS)
+		result_out.open("ICP-WITHNORMALS-" + categoryname + ".txt");
+		
 	for (auto filename : filenames) {
 		if (framecnt < from) {
 			framecnt++;
@@ -837,8 +839,7 @@ int MyRealsense::testDataSet(	const string model_path,
 						myseg.mainRegions_[k],
 						vertices,
 						PointCloudScale,
-						para,
-						method);
+						para);
 			//if (waitKey(1) == ' ') {
 			//if (!wait) {
 			//	wait = true;

@@ -5,6 +5,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/obj_io.h>
 #include <pcl/registration/icp.h>
+#include <pcl/registration/icp_nl.h>
 #include <pcl/registration/sample_consensus_prerejective.h>
 #include <pcl/registration/ia_ransac.h>
 #include <pcl/registration/joint_icp.h>
@@ -319,15 +320,12 @@ Matrix4f RegistrationNoShow(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, P
 	return inverse * transformation_ransac;
 }
 
-Matrix4f RegistrationNoShow_ICP(	PointCloudNT::Ptr &model, 
-									PointCloudNT::Ptr &mesh, 
-									PointCloudNT::Ptr &model_align, 
-									RegisterParameter &para) 
+Matrix4f RegistrationNoShow_ICP(	PointCloudNT::Ptr &model,
+									PointCloudNT::Ptr &mesh,
+									PointCloudNT::Ptr &model_align,
+									RegisterParameter &para	)
 {
 	// Point cloud
-	FeatureCloudT::Ptr model_features(new FeatureCloudT);
-	FeatureCloudT::Ptr mesh_features(new FeatureCloudT);
-	Matrix4f transformation_ransac = Matrix4f::Identity();
 	Matrix4f transformation_icp = Matrix4f::Identity();
 	const float leaf = para.leaf;
 	{
@@ -335,8 +333,6 @@ Matrix4f RegistrationNoShow_ICP(	PointCloudNT::Ptr &model,
 
 		pcl::VoxelGrid <PointNT> grid;
 		grid.setLeafSize(leaf, leaf, leaf);
-		//grid.setInputCloud(model);
-		//grid.filter(*model);
 		grid.setInputCloud(mesh);
 		grid.filter(*mesh);
 	}
@@ -347,43 +343,51 @@ Matrix4f RegistrationNoShow_ICP(	PointCloudNT::Ptr &model,
 		nest.setInputCloud(mesh);
 		nest.compute(*mesh);
 	}
-	{
-		pcl::ScopeTime t("[Estimate features]");
-		FeatureEstimationT fest;
-		fest.setRadiusSearch(5 * leaf);
-		fest.setInputCloud(model);
-		fest.setInputNormals(model);
-		fest.compute(*model_features);
-		fest.setInputCloud(mesh);
-		fest.setInputNormals(mesh);
-		fest.compute(*mesh_features);
-	}
-
-	//If RANSAC success, then ICP
 	//ICP
-	int iterations = 100;
-	double EuclideanEpsilon = 2e-8;
-	int MaximumIterations = 1000;
-	pcl::IterativeClosestPoint<PointNT, PointNT> icp; //ICP algorithm
-	//icp.setInputSource(model_align);
-	//icp.setInputTarget(mesh);
-	icp.setInputSource(mesh);
-	icp.setInputTarget(model);
-	icp.setEuclideanFitnessEpsilon(EuclideanEpsilon);
-	icp.setMaximumIterations(MaximumIterations);
-	icp.setTransformationEpsilon(EuclideanEpsilon);
-	{
-		pcl::ScopeTime t("[ICP]");
-		icp.align(*mesh);
+	if (para.Method == ICP_CLASSIC) {
+		pcl::IterativeClosestPoint<PointNT, PointNT> icp; //ICP algorithm
+		icp.setInputSource(mesh);
+		icp.setInputTarget(model);
+		icp.setEuclideanFitnessEpsilon(para.EuclideanEpsilon);
+		icp.setMaximumIterations(para.MaximumIterationsICP);
+		icp.setTransformationEpsilon(para.EuclideanEpsilon);
+		icp.setMaxCorrespondenceDistance(3000);
+		{
+			pcl::ScopeTime t("[ICP]");
+			icp.align(*model_align);
+		}
+		transformation_icp = icp.getFinalTransformation();
 	}
-	transformation_icp = icp.getFinalTransformation();
+	else if (para.Method == ICP_NOLINEAR) {
+		pcl::IterativeClosestPointNonLinear<PointNT, PointNT> icp;
+		icp.setInputSource(mesh);
+		icp.setInputTarget(model);
+		icp.setEuclideanFitnessEpsilon(para.EuclideanEpsilon);
+		icp.setMaximumIterations(para.MaximumIterationsICP);
+		icp.setRANSACIterations(para.MaximumIterationsICP * 2);
+		// icp.setMaxCorrespondenceDistance(3000);
+		{
+			pcl::ScopeTime t("[ICP-NoLinear]");
+			icp.align(*model_align);
+		}
+		transformation_icp = icp.getFinalTransformation();
+	}
+	else if (para.Method == ICP_WITHNORMLS) {
+		pcl::IterativeClosestPointWithNormals<PointNT, PointNT> icp;
+		icp.setInputSource(mesh);
+		icp.setInputTarget(model);
+		icp.setMaximumIterations(para.MaximumIterationsICP);
+		icp.setRANSACIterations(para.MaximumIterationsICP * 2);
+		icp.setMaxCorrespondenceDistance(3000);
+		{
+			pcl::ScopeTime t("[ICP-WithNormals]");
+			icp.align(*model_align);
+		}
+		transformation_icp = icp.getFinalTransformation();
+	}
 	print4x4Matrix(transformation_icp);
-	Eigen::Matrix4f inverse = transformation_icp.inverse();
-	pcl::transformPointCloud(*model_align, *model_align, inverse);
-
-	return inverse * transformation_ransac;
+	return transformation_icp.inverse();
 }
-
 
 
 

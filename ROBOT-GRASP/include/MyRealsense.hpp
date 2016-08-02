@@ -67,7 +67,6 @@ public:
 						string dir,
 						string categoryname,
 						int from,
-						int method,
 						int seg_index);
 	/**
 	*  @brief testDataSet:
