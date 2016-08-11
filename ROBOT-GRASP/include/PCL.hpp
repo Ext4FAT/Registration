@@ -38,6 +38,7 @@ enum FEATYPE {
 	SIFT
 };
 
+
 struct RegisterParameter {
 	//Downsample
 	float leaf = 0.01f;
@@ -94,8 +95,8 @@ bool  LoadModel(const string model_path, PointCloudNT::Ptr &model); //Normal
 /************************************************************************/
 /* Load grasping region point cloud                                     */
 /************************************************************************/
-bool loadGraspPcd(const string model_path, PointCloudT::Ptr &grasp);
-bool loadGrasp(const string model_path, PointCloudT::Ptr &grasp);
+bool LoadGraspPcd(const string model_path, PointCloudT::Ptr &grasp);
+bool LoadGrasp(const string model_path, PointCloudT::Ptr &grasp);
 
 /************************************************************************/
 /* Downsample model point cloud                                         */
@@ -116,7 +117,7 @@ void EstimateFPFH(PointCloudNT::Ptr &model, FeatureCloudT::Ptr &model_features, 
 /************************************************************************/
 /* Output Transformation Matrix                                         */
 /************************************************************************/
-void print4x4Matrix(const Matrix4f & matrix);
+void Print4x4Matrix(const Matrix4f & matrix);
 
 
 /************************************************************************/

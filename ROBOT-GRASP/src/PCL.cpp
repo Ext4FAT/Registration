@@ -41,7 +41,7 @@ bool  LoadModel(const string model_path, PointCloudNT::Ptr &model) //Normal
 /************************************************************************/
 /* Load grasping region point cloud                                     */
 /************************************************************************/
-bool loadGraspPcd(const string model_path, PointCloudT::Ptr &grasp)
+bool LoadGraspPcd(const string model_path, PointCloudT::Ptr &grasp)
 {
 	pcl::ScopeTime t("[Load grasping point regions]");
 	if (pcl::io::loadPCDFile<PointT>(model_path, *grasp) < 0) {
@@ -50,7 +50,7 @@ bool loadGraspPcd(const string model_path, PointCloudT::Ptr &grasp)
 	}
 	return true;
 }
-bool loadGraspPcd(const string model_path, PointCloudNT::Ptr &grasp)
+bool LoadGraspPcd(const string model_path, PointCloudNT::Ptr &grasp)
 {
 	pcl::ScopeTime t("[Load grasping point regions]");
 	if (pcl::io::loadPCDFile<PointNT>(model_path, *grasp) < 0) {
@@ -60,7 +60,7 @@ bool loadGraspPcd(const string model_path, PointCloudNT::Ptr &grasp)
 	return true;
 }
 
-bool loadGrasp(const string model_path, PointCloudT::Ptr &grasp)
+bool LoadGrasp(const string model_path, PointCloudT::Ptr &grasp)
 {
 	//TODO
 	pcl::ScopeTime t("[Load grasping point regions]");
@@ -74,7 +74,7 @@ bool loadGrasp(const string model_path, PointCloudT::Ptr &grasp)
 /************************************************************************/
 /* Output Transformation Matrix                                         */
 /************************************************************************/
-void print4x4Matrix(const Matrix4f & matrix)
+void Print4x4Matrix(const Matrix4f & matrix)
 {
 	print_info("Rotation matrix :\n");
 	print_info("    | %6.3f %6.3f %6.3f | \n", matrix(0, 0), matrix(0, 1), matrix(0, 2));
@@ -200,7 +200,7 @@ Matrix4f Registration(	PointCloudNT::Ptr &model,
 		viewer.close();
 		return transformation_ransac;
 	}
-	print4x4Matrix(transformation_ransac);
+	Print4x4Matrix(transformation_ransac);
 	//If RANSAC success, then ICP
 	//ICP
 	pcl::IterativeClosestPoint<PointNT, PointNT> icp; //ICP algorithm
@@ -216,7 +216,7 @@ Matrix4f Registration(	PointCloudNT::Ptr &model,
 		icp.align(*mesh);
 	}
 	transformation_icp = icp.getFinalTransformation();
-	print4x4Matrix(transformation_icp);
+	Print4x4Matrix(transformation_icp);
 	//trans model with inverse matrix
 	//Eigen::Matrix4f inverse = transformation_icp.inverse() * transformation;
 	Eigen::Matrix4f inverse = transformation_icp.inverse();
@@ -294,7 +294,7 @@ Matrix4f RegistrationNoShow(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, P
 		pcl::console::print_error("RANSAC alignment failed!\n");
 		// return transformation_ransac;
 	}
-	print4x4Matrix(transformation_ransac);
+	Print4x4Matrix(transformation_ransac);
 	//If RANSAC success, then ICP
 	//ICP
 	int iterations = 100;
@@ -313,7 +313,7 @@ Matrix4f RegistrationNoShow(PointCloudNT::Ptr &model, PointCloudNT::Ptr &mesh, P
 		icp.align(*mesh);
 	}
 	transformation_icp = icp.getFinalTransformation();
-	print4x4Matrix(transformation_icp);
+	Print4x4Matrix(transformation_icp);
 	Eigen::Matrix4f inverse = transformation_icp.inverse();
 	pcl::transformPointCloud(*model_align, *model_align, inverse);
 	
@@ -385,7 +385,7 @@ Matrix4f RegistrationNoShow_ICP(	PointCloudNT::Ptr &model,
 		}
 		transformation_icp = icp.getFinalTransformation();
 	}
-	print4x4Matrix(transformation_icp);
+	Print4x4Matrix(transformation_icp);
 	return transformation_icp.inverse();
 }
 
