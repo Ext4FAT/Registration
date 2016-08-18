@@ -362,10 +362,11 @@ Matrix4f RegistrationNoShow_ICP(	PointCloudNT::Ptr &model,
 		pcl::IterativeClosestPointNonLinear<PointNT, PointNT> icp;
 		icp.setInputSource(mesh);
 		icp.setInputTarget(model);
+		icp.setTransformationEpsilon(1e-10);
 		icp.setEuclideanFitnessEpsilon(para.EuclideanEpsilon);
 		icp.setMaximumIterations(para.MaximumIterationsICP);
-		icp.setRANSACIterations(para.MaximumIterationsICP * 2);
-		// icp.setMaxCorrespondenceDistance(3000);
+		//icp.setRANSACIterations(para.MaximumIterationsICP * 2);
+		icp.setMaxCorrespondenceDistance(100);
 		{
 			pcl::ScopeTime t("[ICP-NoLinear]");
 			icp.align(*model_align);
@@ -376,9 +377,10 @@ Matrix4f RegistrationNoShow_ICP(	PointCloudNT::Ptr &model,
 		pcl::IterativeClosestPointWithNormals<PointNT, PointNT> icp;
 		icp.setInputSource(mesh);
 		icp.setInputTarget(model);
+		icp.setEuclideanFitnessEpsilon(para.EuclideanEpsilon);
 		icp.setMaximumIterations(para.MaximumIterationsICP);
 		icp.setRANSACIterations(para.MaximumIterationsICP * 2);
-		icp.setMaxCorrespondenceDistance(3000);
+		icp.setMaxCorrespondenceDistance(3);
 		{
 			pcl::ScopeTime t("[ICP-WithNormals]");
 			icp.align(*model_align);
