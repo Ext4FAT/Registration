@@ -823,7 +823,9 @@ int MyRealsense::testDataSet(	const string model_path,
 		resize(pointcloud, pointcloud, showSize);
 		imshow("point cloud", pointcloud);
 		//Segment by depth data
+		clock_t start = clock();
 		myseg.Segment(depth2, color2);
+		MESSAGE_COUT("[Segmentation]\t", 1.0*(clock() - start) / CLOCKS_PER_SEC);
 		//Classification
 		int k = 0;
 		for (auto &boundbox : myseg.boundBoxes_) {

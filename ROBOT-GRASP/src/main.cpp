@@ -47,7 +47,7 @@ int main(int argc, char** argv)
 	//vector<string> categorynames = {"bottle", "box", "can", "teacup", "teapot" };
 	//vector<int> seg_index = { 0, 1, 0, 0, 0 };
 
-	vector<string> categorynames = {"teapot" };
+	vector<string> categorynames = {"bottle" };
 	vector<int> seg_index = { 0 };
 
 	//vector<string> categorynames = { "can" };
