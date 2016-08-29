@@ -397,8 +397,6 @@ int MyRealsense::captureColorandDepth()
 	return 1;
 }
 
-int MyRealsense::show(){ return -1; }
-
 int MyRealsense::testRegistration(	const string model_path, 
 									const string grasp_path, 
 									double PointCloudScale,
