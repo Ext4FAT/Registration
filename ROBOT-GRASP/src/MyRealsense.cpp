@@ -67,7 +67,6 @@ void threadShow(const string winname, Mat &img)
 // Convert Realsense's PXC to PCL's PointCloud
 size_t PXC2PCL(PointSet &pSet, vector<PXCPoint3DF32> &vertices, PointCloudNT::Ptr &scene, float scale = 1.f / 300.f)
 {
-	//vector<PXCPoint3DF32> obj_cloud;
 	for (auto& p : pSet) {
 		p += p;
 		PXCPoint3DF32 ppp = vertices[p.y * 640 + p.x];
@@ -223,15 +222,9 @@ bool Reflect(	long framecnt,
 		Rect boundbox = myBoundBox(show2d.grasp);
 		rectangle(color, boundbox, Scalar(255, 0, 0), 2);
 		result_out <<framecnt << "\t" << filenames[framecnt] << "\t" << boundbox << endl;
-
-		//rectangle(color, boundbox, Scalar(0, 0, 255), 2);
 		showRegistrationResult(show2d.model, color, Vec3b(255, 0, 255));
 		showRegistrationResult(show2d.grasp, color, Vec3b(0, 255, 255));
 		return true;
-		//if (waitKey(-1) == 27) {
-		//	wait = false;
-		//	return;
-		//}
 	}
 	wait = false;
 	return false;
@@ -248,7 +241,6 @@ MyRealsense::MyRealsense(string& Dir, int width, int height, float fps)
 	camera_.height = height;
 	fps_ = fps;
 	wait_ = false;
-	//Configure RealSense
 	configRealsense();
 }
 
@@ -289,12 +281,10 @@ int MyRealsense::savePCD(const string filename, PointSet &pSet, vector<PXCPoint3
 	ofs << "POINTS " << pSet.size() << endl;
 	ofs << "DATA ascii" << endl;
 	double scale = 1. / 300;
-	//vector<PXCPoint3DF32> obj_cloud;
 	for (auto& p : pSet) {
 		p += p;
 		PXCPoint3DF32 ppp = vertices[p.y * 640 + p.x];
 		ofs << ppp.x*scale << " " << ppp.y*scale << " " << ppp.z*scale << endl;
-		//obj_cloud.push_back(vertices[p.y * 640 + p.x]);
 	}
 	ofs.close();
 	return 1;
@@ -333,197 +323,7 @@ int MyRealsense::configRealsense()
 	return 0;
 }
 
-int MyRealsense::dataAcquire()
-{
-	////Detect dir exist, if not, create
-	//DIR_NOEXIST_AND_CREATE(dir_);
-	//DIR_NOEXIST_AND_CREATE(depthDir_);
-	//DIR_NOEXIST_AND_CREATE(colorDir_);
-
-	//Define variable
-	Mat color, depth, pointcloud;
-	vector<PXCPoint3DF32> vertices(camera_.height*camera_.width);
-	PXCSession *pxcsession;
-	PXCSenseManager *pxcsm;
-	PXCCapture::Device *pxcdev;
-	PXCProjection *projection;
-	PXCCapture::Sample *sample;
-	PXCImage *pxcdepth,*pxccolor;
-	
-
-
-	long framecnt;
-	//Configure RealSense
-
-	pxcsession = PXCSession::CreateInstance();
-	pxcsm = pxcsession->CreateSenseManager();
-
-	//pxcsm->EnableFace();
-
-	pxcsm->EnableStream(PXCCapture::STREAM_TYPE_COLOR, camera_.width, camera_.height, fps_);
-	pxcsm->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, camera_.width, camera_.height, fps_);
-	
-	//pxcsm->EnableStream(PXCCapture::STREAM_TYPE_COLOR, 0, 0, 0, PXCCapture::Device::STREAM_OPTION_STRONG_STREAM_SYNC);
-
-	//pxcsm->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, 0, 0, 0, PXCCapture::Device::STREAM_OPTION_STRONG_STREAM_SYNC);
-
-
-	DrawWorld dw(pxcsession, camera_);
-	PXCPoint3DF32 light = { .5, .5, 1.0 };
-
-
-
-	////开启物体识别
-	//pxcsm->EnableObjectRecognition();
-	//PXCObjectRecognitionModule *reco = pxcsm->QueryObjectRecognition();
-	
-	pxcsm->Init();
-	pxcdev = pxcsm->QueryCaptureManager()->QueryDevice();
-
-	PXCPointF32 cf = pxcdev->QueryColorFocalLength();
-	PXCPointF32 df = pxcdev->QueryDepthFocalLength();
-	pxcF32 cfmm = pxcdev->QueryColorFocalLengthMM();
-	pxcF32 dfmm = pxcdev->QueryDepthFocalLengthMM();
-	PXCPointF32 dpp = pxcdev->QueryDepthPrincipalPoint();
-	PXCPointF32 cpp = pxcdev->QueryColorPrincipalPoint();
-	PXCPointF32 dview = pxcdev->QueryDepthFieldOfView();
-	PXCRangeF32 drange = pxcdev->QueryDepthSensorRange();
-	PXCCapture::DeviceInfo ppp;
-	pxcdev->QueryDeviceInfo(&ppp);
-	cout << cfmm << endl;
-	cout << dfmm << endl;
-	cout << endl;
-	//PXCImage::Rotation rt = ppp.rotation;
-
-
-	pxcdev->SetDepthConfidenceThreshold(4);
-	if (!pxcdev) {
-		MESSAGE_COUT("ERROR", "Failed to create an SDK SenseManager");
-		return -1;
-	}
-	projection = pxcdev->CreateProjection();
-	if (!projection) {
-		MESSAGE_COUT("ERROR", "Failed to create an SDK Projection");
-		return -1;
-	}
-
-	//calibration
-	PXCCalibration *calib = projection->QueryInstance<PXCCalibration>();
-	PXCCalibration::StreamCalibration sc;
-	PXCCalibration::StreamTransform st;
-	calib->QueryStreamProjectionParametersEx(PXCCapture::StreamType::STREAM_TYPE_DEPTH,
-		PXCCapture::Device::StreamOption::STREAM_OPTION_DEPTH_PRECALCULATE_UVMAP,
-		&sc, &st);
-	//calib->QueryStreamProjectionParameters(PXCCapture::StreamType::STREAM_TYPE_DEPTH, &sc, &st);
-
-	cout << endl;
-	unsigned topk = 5;
-	short threshold = 3;
-	Size sz(320, 240);
-	Segmentation myseg(sz, topk, threshold);
-
-	//Detect each video frame
-	for (framecnt = 1; -1 == waitKey(1); framecnt++) {
-		if (pxcsm->AcquireFrame(true) < PXC_STATUS_NO_ERROR)	break;
-		//Query the realsense color and depth, and project depth to color
-		try{
-			sample = pxcsm->QuerySample();
-			pxcdepth = sample->depth;
-			pxccolor = sample->color;
-			pxcdepth = projection->CreateDepthImageMappedToColor(pxcdepth, pxccolor);
-			
-			//vector<PXCPoint3DF32> vex(camera_.width*camera_.height);
-			//projection->QueryVertices(pxcdepth, &vex[0]);
-			
-			//project to world 
-
-			//pxcStatus sts = projection->QueryVertices(pxcdepth, &vertices[0]);
-			//if (sts >= PXC_STATUS_NO_ERROR) {
-			//	PXCImage* drawVertices = dw.DepthToWorldByQueryVertices(vertices, pxcdepth, light);
-			//	if (drawVertices){
-			//		Mat pointcloud = PXCImage2Mat(drawVertices);
-			//		imshow("pointcloud", pointcloud);
-			//	}
-			//}
-			
-
-			//waitKey(-1);
-			
-
-			////project to world
-			//projection->QueryVertices(pxcdepth, &vertices[0]);
-			//
-			//ofstream ofs("123.txt");
-			//for (auto v : vertices) {
-			//	if (v.x || v.y || v.z)
-			//		ofs << "v " << v.x << " " << v.y << " " << v.z << endl;
-			//}
-			//cout << endl;
-
-
-
-			//pxcdepth = projection->CreateColorImageMappedToDepth(pxcdepth,pxccolor);
-			depth = PXCImage2Mat(pxcdepth);
-			color = PXCImage2Mat(pxccolor);
-			if (!depth.cols || !color.cols)	continue;
-
-			Mat depth2, color2;
-			resize(depth, depth2, Size(320, 240));
-			resize(color, color2, Size(320, 240));
-
-			imshow("depth", 65535 / 1200 * depth2);
-			imshow("color", color2);
-
-			myseg.completeDepth(depth);
-
-			myseg.Segment(depth2, color2);
-			
-			
-			myseg.clear();
-
-
-
-			//Segment by Depth
-			//bfs(depth,vector<vector<Point>>)
-
-			////Construct the filename to save
-			//time_t slot = time(0);
-			//std::string cpath = getSavePath(colorDir_, slot, framecnt);
-			//std::string dpath = getSavePath(depthDir_, slot, framecnt);
-
-			////Save image
-			//imwrite(cpath, color);
-			//imwrite(dpath, depth);
-
-			//double dmax, dmin;
-			//minMaxLoc(depth, &dmin, &dmax);
-			//MESSAGE_COUT("MIN-MAX", dmin << " , " << dmax);
-
-			//Show image
-
-			//resize(color, color, cv::Size(640, 480));
-			//resize(depth, depth, cv::Size(640, 480));
-
-			
-			//imshow("Depth", 256 * 255 / 1200 * depth);
-			//imshow("COLOR", color);
-			
-			
-			//Release Realsense SDK memory and read next frame 
-			
-			//pxccolor->Release();
-			pxcdepth->Release();
-			pxcsm->ReleaseFrame();
-		}
-		catch (Exception e){
-			MESSAGE_COUT("ERROR", e.what());
-		}
-	}
-	return 1;
-
-}
-
-int MyRealsense::captureDepthandSave()
+int MyRealsense::captureColorandDepth()
 {
 	//Define variable
 	Mat color, depth, pointcloud;
@@ -579,22 +379,17 @@ int MyRealsense::captureDepthandSave()
 				imshow("point cloud", pointcloud);
 			}
 		}
-
-
-		//Mat depth2, color2;
-		//resize(depth, depth2, Size(320, 240));
-		//resize(color, color2, Size(320, 240));
-		
-
-		if (waitKey(33 ) == ' ')
-		{
+		//Show image
+		Mat depth2, color2;
+		resize(depth, depth2, Size(320, 240));
+		resize(color, color2, Size(320, 240));
+		imshow("color", color2);
+		imshow("depth", 65535 / 1200 * depth2);
+		//Press `space` to capture data
+		if (waitKey(33 ) == ' ') {
 			imwrite(".\\snap\\depth-" + to_string(framecnt) + ".png", depth);
-			imwrite(".\\snap\\depth-scale-" + to_string(framecnt) + ".png", 65535 / 1200*depth);
 			imwrite(".\\snap\\color-" + to_string(framecnt) + ".png", color);
 		}
-
-
-
 		//Release
 		pxcdepth->Release();
 		pxcsm->ReleaseFrame();
@@ -669,66 +464,37 @@ int MyRealsense::testRegistration(	const string model_path,
 		//Segment by depth data
 		myseg.Segment(depth2, color2);
 		//Classification
-		int k = 0;
-		for (auto &boundbox : myseg.boundBoxes_) {
-			Mat region = color2(boundbox);
-			//int predict = hog_svm.predict(region);
-			//if (predict > 0) {
-			//	string name = hog_svm.getCategoryName(predict);
-				string name = "bottle";
-				rectangle(color2, boundbox, Scalar(0, 0, 255), 2);
-				drawText(color2, boundbox, name);
-				//show point cloud
+		for (int k = 0; k < topk; k++){
+			Rect roi = myseg.boundBoxes_[k];
+			Mat region = color2(roi);
+			int predict = hog_svm.predict(region);
+			if (0 < predict) {
+				//label rectangle
+				string name = hog_svm.getCategoryName(predict);
+				rectangle(color2, roi, Scalar(0, 0, 255), 2);
 				imshow("classification", color2);
-				imshow("point cloud", pointcloud);
-				//Registration
-				//if (waitKey(1) == ' ') {
-				if (!wait) {
-					wait = true;
-					thread t(	Reflect,
-								framecnt,
-								name,
-								color,
-								projection_,
-								model,
-								grasp,
-								myseg.mainRegions_[k],
-								vertices, 
-								PointCloudScale, 
-								para);
-					t.detach();
+				//show registration
+				if (waitKey(1) == ' ') {
+					cout << "[" << framecnt << "]" << endl;
+					if (!wait) {
+						wait = true;
+						thread t(Reflect,
+							framecnt,
+							name,
+							color,
+							projection_,
+							model,
+							grasp,
+							myseg.mainRegions_[k],
+							vertices,
+							PointCloudScale,
+							para);
+						t.detach();
+					}
 				}
-			//}
-			k++;
-			if (k > 0)
-				break;
+			}
 		}
-		//for (int k = 0; k < topk; k++){
-		//	if (0 < hog_svm.predict(color2(myseg.boundBoxes_[k]))) {
-		//		//label rectangle
-		//		rectangle(color2, myseg.boundBoxes_[k], Scalar(0, 0, 255), 2);
-		//		imshow("classification", color2);
-		//		////show point cloud
-		//		//Mat show = color2.clone();
-		//		//for (auto p : myseg.mainRegions_[k])
-		//		//	show.at<Vec3b>(p) = pointcloud.at<Vec3b>(p);
-		//		//imshow(to_string(k), show);
-		//		//show registration
-		//		if (waitKey(1) == ' ') {
-		//			cout << "[" << framecnt << "]" << endl;
-		//			vector<PXCPointF32> show2d = genRegistrationResult(projection_, model, myseg, vertices, PointCloudScale, leaf);
-		//			if (show2d.size()) {
-		//				showRegistrationResult(show2d, color);
-		//				if (waitKey(-1) == 27)
-		//					break;
-		//			}
-		//		}
-		//	}
-		//}
-
 		//Release
-		if (' ' == waitKey(1))
-			waitKey(-1);
 		myseg.clear();
 		pxcdepth->Release();
 		pxcsm_->ReleaseFrame();
@@ -777,14 +543,12 @@ int MyRealsense::testDataSet(	const string model_path,
 	DrawWorld dw(pxcsession_, camera_);
 	//Detect each video frame
 	placeWindows(topk);
-	//
+	//Read test data filename 
 	readFromCSV(categoryname, ".\\res\\" + categoryname + ".csv", filenames);
-	//filenames = getCurdirFileName(dir + "\\" + categoryname);
-	framecnt = 0;
-
-	//open outfile.txt
+	//Open outfile.txt
 	result_out.open(Method2String(para.Method) + "-" + categoryname + ".txt");
-		
+	//Read source data
+	framecnt = 0;
 	for (auto filename : filenames) {
 		if (framecnt < from) {
 			framecnt++;
@@ -850,32 +614,12 @@ int MyRealsense::testDataSet(	const string model_path,
 						vertices,
 						PointCloudScale,
 						para);
-			//if (waitKey(1) == ' ') {
-			//if (!wait) {
-			//	wait = true;
-			//	thread t(Reflect,
-			//		framecnt,
-			//		name,
-			//		color,
-			//		projection_,
-			//		model,
-			//		grasp,
-			//		myseg.mainRegions_[k],
-			//		vertices,
-			//		PointCloudScale,
-			//		para);
-			//	t.detach();
-			//}
-			//}
 			k++;
-			//if (k > 1)
 			if (k > seg_index)
 				break;
 		}
 		framecnt++;
-
 		MYCUSTOM::mynumber++;
-
 		//Release
 		if (' ' == waitKey(1))
 			waitKey(-1);
@@ -893,42 +637,3 @@ int MyRealsense::testDataSet(	const string model_path,
 }
 
 
-
-int MyRealsense::testFromValidDataSet(	const string model_path,
-										const string grasp_path,
-										double PointCloudScale,
-										RegisterParameter &para,
-										string dir,
-										string categoryname,
-										string csvname) 
-{
-	//Define variable
-	Size showSize = { camera_.width / 2, camera_.height / 2 }; //segement and show size is the half of camera
-	Mat color, depth, pointcloud;
-	vector<PXCPoint3DF32> vertices(camera_.height*camera_.width);
-	//PXCCapture::Sample *sample;
-	//PXCImage *pxcdepth, *pxccolor;
-	long framecnt;
-	int state = 0;
-	//Load 3D Model
-	const float leaf = para.leaf;
-	PointCloudNT::Ptr model(new PointCloudNT);
-	LoadModel(model_path, model);
-	Downsample(model, leaf);
-	//Load grasping point region
-	PointCloudT::Ptr grasp(new PointCloudT);
-	LoadGraspPcd(grasp_path, grasp);
-	//Configure Segmentation
-	unsigned topk = 5;
-	short threshold = 3;
-	Segmentation myseg(showSize.width, showSize.height, topk, threshold);
-	//Configure HOG-SVM
-	HOG_SVM hog_svm(".\\classification\\HOG-SVM-MODEL.xml");
-	vector<string> names = hog_svm.getSubdirName(".\\classification");
-	hog_svm.getCategory(names);
-	//Configure Draw Point Cloud
-	DrawWorld dw(pxcsession_, camera_);
-	//Detect each video frame
-	placeWindows(topk);
-	return 1;
-}
