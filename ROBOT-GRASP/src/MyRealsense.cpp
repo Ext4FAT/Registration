@@ -195,7 +195,7 @@ bool Reflect(	long framecnt,
 	Reflect_Result show2d = genRegistrationResult(projection, model, grasp, segment, vertices, scale, para);
 
 	if (!show2d.isEmpty()) {
-		Rect boundbox = myBoundBox(show2d.grasp);
+		Rect boundbox = MyRealsense::myBoundBox(show2d.grasp);
 		rectangle(color, boundbox, Scalar(255, 0, 0), 2);
 		result_out <<framecnt << "\t" << filenames[framecnt] << "\t" << boundbox << endl;
 		showRegistrationResult(show2d.model, color, Vec3b(255, 0, 255));
