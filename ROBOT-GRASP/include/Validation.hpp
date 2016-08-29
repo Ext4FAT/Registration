@@ -35,8 +35,6 @@ vector<string> splitStr(string str, char c)
 
 int readFromCSV(string category, string csvname)
 {
-	//string dir = "C:\\Users\\IDLER\\Desktop\\DATASET\\DataSet\\" + category + "\\";
-	//string depth_dir = "C:\\Users\\IDLER\\Desktop\\DATASET\\DataSet\\depth\\";
 	ifstream readin(csvname);
 	string row, filename;
 	int num;
@@ -49,12 +47,6 @@ int readFromCSV(string category, string csvname)
 		jaccard = atof(v[2].c_str());
 		if (!num)
 			break;
-		//cout << num << " " << filename << " " << jaccard << endl;
-		//Mat color = imread(dir + filename);
-		//Mat depth = imread(depth_dir + filename, CV_LOAD_IMAGE_UNCHANGED);
-		//imshow("color", color);
-		//imshow("depth", 65536 / 1200 * depth);
-		//waitKey(-1);
 	}
 	return num;
 }

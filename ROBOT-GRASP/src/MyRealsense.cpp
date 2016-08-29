@@ -4,7 +4,6 @@
 #include "Segmentation.hpp"
 #include "HOG-SVM.hpp"
 #include "MyRealsense.hpp"
-
 #include "Validation.hpp"
 
 typedef vector<PXCPointF32> PXC2DPointSet;
@@ -35,22 +34,6 @@ string Method2String(METHOD m){
 		return "";
 	return methods.at(m);
 }
-
-
-
-Rect myBoundBox(vector<PXCPointF32> &pointset)
-{
-	//static Point extend(5, 5);
-	Point pmax(0, 0), pmin(0x7fffffff, 0x7fffffff);
-	for (auto p : pointset) {
-		if (p.x > pmax.x) pmax.x = p.x;
-		if (p.x < pmin.x) pmin.x = p.x;
-		if (p.y > pmax.y) pmax.y = p.y;
-		if (p.y < pmin.y) pmin.y = p.y;
-	}
-	return Rect(pmin, pmax) & range;
-}
-
 
 // Thread
 void myimshow(const string winname, Mat &img)
@@ -104,10 +87,10 @@ void placeWindows(int topk)
 	cv::moveWindow("regions", 0, 300);
 	cv::moveWindow("reflect", 700, 300);
 	cv::moveWindow("point cloud", 0, 600);
-	//for (int k = 0; k < topk; k++) {
-	//	cv::namedWindow(to_string(k));
-	//	cv::moveWindow(to_string(k), (k) * 350, 600);
-	//}
+	for (int k = 0; k < topk; k++) {
+		cv::namedWindow(to_string(k));
+		cv::moveWindow(to_string(k), (k) * 350, 600);
+	}
 }
 
 vector<PXCPointF32> genRegistrationResult(	PXCProjection *projection, 
@@ -152,25 +135,16 @@ Reflect_Result genRegistrationResult(	PXCProjection *projection,
 	size_t sz = PXC2PCL(segment, vertices, mesh, 1.0 / scale);
 	cout << "Generate Point Cloud: " << sz << endl;
 	//Alignment
-	
-	//Matrix4f transformation = Registration(model, mesh, model_align, leaf, true);
-	
-
 	/** TODO
 	*/
-	
 	Matrix4f transformation;
 	if (para.Method == RANSACPLUSICP)
 		transformation = RegistrationNoShow(model, mesh, model_align, para);
 	else {
 		transformation = RegistrationNoShow_ICP(model, mesh, model_align, para);
 	}
-	//Matrix4f transformation = RegistrationNoShow(model, mesh, model_align, para);
-	//Matrix4f transformation = RegistrationNoShow(model, mesh, model_align, leaf);
-	
 	if (transformation == Matrix4f::Identity()) //Alignment failed 
 		return{};
-
 	pcl::transformPointCloud(*grasp, *grasp_align, transformation);
 	//Reflect
 	pcl::ScopeTime t("[Reflect]");
@@ -190,7 +164,9 @@ Reflect_Result genRegistrationResult(	PXCProjection *projection,
 	return show2d;
 }
 
-void showRegistrationResult(vector<PXCPointF32> &show2d, Mat &img, Vec3b color)
+void showRegistrationResult(	vector<PXCPointF32> &show2d, 
+								Mat &img, 
+								Vec3b color)
 {
 	for (auto p : show2d) {
 		Point pp(p.x, p.y);
@@ -242,6 +218,20 @@ MyRealsense::MyRealsense(string& Dir, int width, int height, float fps)
 	fps_ = fps;
 	wait_ = false;
 	configRealsense();
+}
+
+//Find bounding box
+Rect MyRealsense::myBoundBox(vector<PXCPointF32> &pointset)
+{
+	//static Point extend(5, 5);
+	Point pmax(0, 0), pmin(0x7fffffff, 0x7fffffff);
+	for (auto p : pointset) {
+		if (p.x > pmax.x) pmax.x = p.x;
+		if (p.x < pmin.x) pmin.x = p.x;
+		if (p.y > pmax.y) pmax.y = p.y;
+		if (p.y < pmin.y) pmin.y = p.y;
+	}
+	return Rect(pmin, pmax) & range;
 }
 
 //Convert RealSense's PXCImage to Opencv's Mat

@@ -234,11 +234,9 @@ void Segmentation::draw(SegmentSet &segment, Mat &disp, vector<Vec3b> &colors)
 {
 	int count = 0;
 	for (auto seg : segment) {
-		//imshow("disp", disp);
 		for (auto p : seg)
 			disp.at<Vec3b>(p) = colors[count];
 		count++;
-		//waitKey(-1);
 	}
 
 }
@@ -272,13 +270,31 @@ void Segmentation::drawSobel(Mat &depth)
 	cv::Sobel(depth, sobelx, 2, 1, 0);
 	cv::Sobel(depth, sobely, 2, 0, 1);
 	sobel = abs(sobelx) + abs(sobely);
-	//cout << "asd" << endl;
 	double min, max;
 	cv::minMaxLoc(sobel, &min, &max);
 	sobel.convertTo(disp, CV_8U, 255. / max);
 	Canny(disp, disp, 0, 20);
 	cout << max << endl;
 	imshow("sobel", disp);
+}
+
+
+void Segmentation::drawBoundBox(SegmentSet &segment, vector<double> &distance, Mat &color, Mat &depth, string categoryName)
+{
+	int count = 0;
+	Mat classification = color.clone();
+
+	for (auto seg : segment) {
+		vector<Point> hull;
+		convexHull(seg, hull, false);
+		//RotatedRect rr = cv::minAreaRect(hull);
+		Rect boundbox = Segmentation::hullBoundBox(hull);
+		rectangle(color, boundbox, Scalar(255, 255, 255), 2);
+		count++;
+	}
+	imshow("regions", color);
+	imshow("classification", classification);
+	imshow("depth", 65535 / 1200 * depth);
 }
 
 void Segmentation::drawRegions(SegmentSet &segment, Mat &color, Mat &depth, Mat &disp)
@@ -346,22 +362,4 @@ void Segmentation::drawRegions(SegmentSet &segment, Mat &color, Mat &depth, Mat 
 	//	//imshow(to_string(i), rMat.back());
 	//}
 
-}
-
-void Segmentation::drawBoundBox(SegmentSet &segment, vector<double> &distance, Mat &color, Mat &depth, string categoryName)
-{
-	int count = 0;
-	Mat classification = color.clone();
-
-	for (auto seg : segment) {
-		vector<Point> hull;
-		convexHull(seg, hull, false);
-		//RotatedRect rr = cv::minAreaRect(hull);
-		Rect boundbox = Segmentation::hullBoundBox(hull);
-		rectangle(color, boundbox, Scalar(255, 255, 255), 2);
-		count++;
-	}
-	imshow("regions", color);
-	imshow("classification", classification);
-	imshow("depth", 65535 / 1200 * depth);
 }

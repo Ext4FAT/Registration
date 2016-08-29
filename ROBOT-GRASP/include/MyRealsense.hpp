@@ -89,11 +89,17 @@ private:
 	*  @param filename   which filename want to save
 	*  @param pSet		 2D point set
 	*  @param vertices   the whole 3D points cloud data 
-	*  @return		SUCCESS / FAILED
+	*  @return			SUCCESS / FAILED
 	*/
 	int savePCD(	const string filename, 
 					PointSet &pSet, 
 					vector<PXCPoint3DF32> &vertices);
+	/**
+	*  @brief myBoundBox: Find PXCPointF32 bound box, and return Rect
+	*  @param pointset	Realsense pointset  
+	*  @return			bounding Rect
+	*/
+	Rect myBoundBox(vector<PXCPointF32> &pointset);
 
 private:
 	// DataAcquire Setting
