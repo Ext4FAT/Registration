@@ -81,7 +81,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="src\FileOperation.cpp" />
-    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\test.cpp" />
     <ClCompile Include="src\PCL.cpp" />
     <ClCompile Include="src\Segmentation.cpp" />
   </ItemGroup>
