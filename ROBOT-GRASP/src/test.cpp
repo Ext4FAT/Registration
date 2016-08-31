@@ -3,14 +3,6 @@
 
 int main(int argc, char** argv)
 {
-	map<int, METHOD> Int2Method;
-	Int2Method[0] = ICP_CLASSIC;
-	Int2Method[1] = ICP_NOLINEAR;
-	Int2Method[2] = ICP_WITHNORMLS;
-	Int2Method[3] = RANSACPLUSICP;
-	Int2Method[4] = SAC_IA;
-
-
 	MESSAGE_COUT("USAGE", "\tROBOR-GRASP [Scale] [Model Path]");
 	string save_dir_path = ".\\";
 	double scale = argc > 1 ? atof(argv[1]) : 400.0;
@@ -37,7 +29,7 @@ int main(int argc, char** argv)
 	if (argc > 10)
 		from = atoi(argv[10]);
 	if (argc > 11)
-		para.Method = Int2Method[atoi(argv[11])];
+		para.Method = (METHOD)atoi(argv[11]);
 
 	//F200
 	MyRealsense robot(save_dir_path, 640, 480, 30);

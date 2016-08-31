@@ -23,8 +23,8 @@ ofstream result_out;
 vector<string> filenames;
 static Rect range = { 0, 0, 640, 480 };
 
-
-string Method2String(METHOD m){
+// convert `enum` to `string`
+inline string Method2String(METHOD m){
 	static vector<string> methods = {	"ICP_CLASSIC",
 										"ICP_NOLINEAR",
 										"ICP_WITHNORMLS",
@@ -87,10 +87,10 @@ void placeWindows(int topk)
 	cv::moveWindow("regions", 0, 300);
 	cv::moveWindow("reflect", 700, 300);
 	cv::moveWindow("point cloud", 0, 600);
-	for (int k = 0; k < topk; k++) {
-		cv::namedWindow(to_string(k));
-		cv::moveWindow(to_string(k), (k) * 350, 600);
-	}
+	//for (int k = 0; k < topk; k++) {
+	//	cv::namedWindow(to_string(k));
+	//	cv::moveWindow(to_string(k), (k) * 350, 600);
+	//}
 }
 
 vector<PXCPointF32> genRegistrationResult(	PXCProjection *projection, 
@@ -177,6 +177,7 @@ void showRegistrationResult(	vector<PXCPointF32> &show2d,
 	imshow("reflect", img);
 }
 
+// MultiThread show registration
 bool Reflect(	long framecnt,
 				string name,
 				Mat& img,
@@ -507,8 +508,6 @@ int MyRealsense::testDataSet(	const string model_path,
 	Size showSize = { camera_.width / 2, camera_.height / 2 }; //segement and show size is the half of camera
 	Mat color, depth, pointcloud;
 	vector<PXCPoint3DF32> vertices(camera_.height*camera_.width);
-	//PXCCapture::Sample *sample;
-	//PXCImage *pxcdepth, *pxccolor;
 	long framecnt;
 	int state = 0;
 	//Load 3D Model
