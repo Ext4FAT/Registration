@@ -388,6 +388,7 @@ int MyRealsense::captureColorandDepth()
 	return 1;
 }
 
+//MultiThread
 int MyRealsense::testRegistration(	const string model_path, 
 									const string grasp_path, 
 									double PointCloudScale,
@@ -581,9 +582,6 @@ int MyRealsense::testDataSet(	const string model_path,
 		int k = 0;
 		for (auto &boundbox : myseg.boundBoxes_) {
 			Mat region = color2(boundbox);
-			//int predict = hog_svm.predict(region);
-			//if (predict > 0) {
-			//	string name = hog_svm.getCategoryName(predict);
 			string name = categoryname;
 			rectangle(color2, boundbox, Scalar(0, 0, 255), 2);
 			drawText(color2, boundbox, name);
